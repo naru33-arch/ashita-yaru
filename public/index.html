@@ -55,13 +55,36 @@ button {
     ボタンを押してください
 </div>
 
-<button onclick="testAddTask()">
-    Firestore接続テスト
+<input
+    id="taskTitle"
+    type="text"
+    placeholder="タスクを入力"
+>
+
+<button onclick="addTask()">
+    追加
 </button>
 
-<button onclick="loadTasks()">
-    Firestoreから読み込み
-</button>
+<hr>
+
+<h2>今日</h2>
+
+<div id="taskList">
+</div>
+
+<div id="status">
+    タスクを入力してください
+</div>
+
+<!--
+	<button onclick="testAddTask()">
+	    Firestore接続テスト
+	</button>
+
+	<button onclick="loadTasks()">
+	    Firestoreから読み込み
+	</button>
+-->
 
 <div id="taskList">
 </div>
@@ -97,46 +120,44 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
-window.testAddTask = async function () {
+window.addTask = async function () {
 
-    const status = document.getElementById("status");
+    const title = document.getElementById("taskTitle").value.trim();
+
+    if (!title) {
+        alert("タイトルを入力してください");
+        return;
+    }
 
     try {
-
-        const docRef = await addDoc(
+        await addDoc(
             collection(db, "tasks"),
             {
-                title: "Firestore接続テスト",
+                title: title,
                 detail: "",
                 dueDate: null,
-
                 importance: 2,
                 motivation: 2,
-
                 bucket: "today",
-
                 completed: false,
-
                 tomorrowCount: 0,
                 somedayCount: 0,
-
+                sortOrder: Date.now(),
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
-
                 completedAt: null,
                 lastMovedAt: serverTimestamp()
             }
         );
 
-        status.innerHTML =
-            "✅ 保存成功<br>ID: " + docRef.id;
+        document.getElementById("taskTitle").value = "";
+        document.getElementById("status").innerHTML = "✅ 追加しました";
+
+        loadTasks();
 
     } catch (error) {
-
         console.error(error);
-
-        status.innerHTML =
-            "❌ エラー<br>" + error.message;
+        document.getElementById("status").innerHTML = "❌ エラー<br>" + error.message;
     }
 };
 
@@ -167,10 +188,9 @@ window.loadTasks = async function () {
             const completedMark = task.completed ? "☑" : "☐";
 
             html += `
-                <div style="background:white; padding:10px; margin:10px 0; border-radius:8px;">
-                    ${completedMark} ${task.title}<br>
-                    <small>ID: ${doc.id}</small>
-                </div>
+			    <div style="background:white; padding:10px; margin:10px 0; border-radius:8px;">
+			        ${completedMark} ${task.title}
+			    </div>
             `;
         });
 
