@@ -51,12 +51,19 @@ button {
     Firestore接続テスト
 </p>
 
+<div id="status">
+    ボタンを押してください
+</div>
+
 <button onclick="testAddTask()">
     Firestore接続テスト
 </button>
 
-<div id="status">
-    ボタンを押してください
+<button onclick="loadTasks()">
+    Firestoreから読み込み
+</button>
+
+<div id="taskList">
 </div>
 ```
 
@@ -70,6 +77,9 @@ import {
     getFirestore,
     collection,
     addDoc,
+    getDocs,
+	query,
+	orderBy,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
@@ -130,6 +140,48 @@ window.testAddTask = async function () {
     }
 };
 
+window.loadTasks = async function () {
+
+    const taskList = document.getElementById("taskList");
+    taskList.innerHTML = "読み込み中...";
+
+    try {
+
+        const q = query(
+            collection(db, "tasks"),
+            orderBy("createdAt", "desc")
+        );
+
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            taskList.innerHTML = "タスクはありません";
+            return;
+        }
+
+        let html = "<h2>タスク一覧</h2>";
+
+        snapshot.forEach((doc) => {
+            const task = doc.data();
+
+            const completedMark = task.completed ? "☑" : "☐";
+
+            html += `
+                <div style="background:white; padding:10px; margin:10px 0; border-radius:8px;">
+                    ${completedMark} ${task.title}<br>
+                    <small>ID: ${doc.id}</small>
+                </div>
+            `;
+        });
+
+        taskList.innerHTML = html;
+
+    } catch (error) {
+
+        console.error(error);
+        taskList.innerHTML = "❌ 読み込みエラー<br>" + error.message;
+    }
+};
 </script>
 
 </body>
