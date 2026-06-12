@@ -86,8 +86,18 @@ button {
 	</button>
 -->
 
-<div id="taskList">
-</div>
+<h2>今日</h2>
+<div id="todayList"></div>
+
+<hr>
+
+<h2>明日</h2>
+<div id="tomorrowList"></div>
+
+<hr>
+
+<h2>そのうち</h2>
+<div id="somedayList"></div>
 ```
 
 </div>
@@ -103,6 +113,8 @@ import {
     getDocs,
 	query,
 	orderBy,
+	doc,
+    updateDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
@@ -163,8 +175,13 @@ window.addTask = async function () {
 
 window.loadTasks = async function () {
 
-    const taskList = document.getElementById("taskList");
-    taskList.innerHTML = "読み込み中...";
+    const todayList = document.getElementById("todayList");
+    const tomorrowList = document.getElementById("tomorrowList");
+    const somedayList = document.getElementById("somedayList");
+
+    todayList.innerHTML = "";
+    tomorrowList.innerHTML = "";
+    somedayList.innerHTML = "";
 
     try {
 
@@ -175,33 +192,104 @@ window.loadTasks = async function () {
 
         const snapshot = await getDocs(q);
 
-        if (snapshot.empty) {
-            taskList.innerHTML = "タスクはありません";
-            return;
-        }
-
-        let html = "<h2>タスク一覧</h2>";
-
         snapshot.forEach((doc) => {
-            const task = doc.data();
 
+            const task = doc.data();
             const completedMark = task.completed ? "☑" : "☐";
 
-            html += `
-			    <div style="background:white; padding:10px; margin:10px 0; border-radius:8px;">
-			        ${completedMark} ${task.title}
+            const moveButton =
+			    task.bucket === "today"
+			    ? `<button onclick="moveToTomorrow('${doc.id}')">明日</button>`
+			    : "";
+
+			const html = `
+			    <div style="
+			        background:white;
+			        padding:10px;
+			        margin:10px 0;
+			        border-radius:8px;
+			    ">
+			        <span
+			            style="cursor:pointer;"
+			            onclick="toggleComplete('${doc.id}', ${task.completed})"
+			        >
+			            ${completedMark} ${task.title}
+			        </span>
+
+			        ${moveButton}
 			    </div>
             `;
-        });
 
-        taskList.innerHTML = html;
+            if (task.bucket === "today") {
+                todayList.innerHTML += html;
+            }
+
+            else if (task.bucket === "tomorrow") {
+                tomorrowList.innerHTML += html;
+            }
+
+            else if (task.bucket === "someday") {
+                somedayList.innerHTML += html;
+            }
+
+        });
 
     } catch (error) {
 
         console.error(error);
-        taskList.innerHTML = "❌ 読み込みエラー<br>" + error.message;
+
+        document.getElementById("status").innerHTML =
+            "❌ 読み込みエラー<br>" + error.message;
     }
 };
+
+window.toggleComplete = async function (taskId, completed) {
+
+    try {
+        await updateDoc(
+            doc(db, "tasks", taskId),
+            {
+                completed: !completed,
+                completedAt: !completed ? serverTimestamp() : null,
+                updatedAt: serverTimestamp()
+            }
+        );
+
+        loadTasks();
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById("status").innerHTML =
+            "❌ 更新エラー<br>" + error.message;
+    }
+};
+
+window.moveToTomorrow = async function (taskId) {
+
+    try {
+
+        await updateDoc(
+            doc(db, "tasks", taskId),
+            {
+                bucket: "tomorrow",
+
+                tomorrowCount: 1,
+
+                updatedAt: serverTimestamp()
+            }
+        );
+
+        loadTasks();
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("status").innerHTML =
+            "❌ 移動エラー<br>" + error.message;
+    }
+};
+
 </script>
 
 </body>
