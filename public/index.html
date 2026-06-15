@@ -197,10 +197,20 @@ window.loadTasks = async function () {
             const task = doc.data();
             const completedMark = task.completed ? "☑" : "☐";
 
-            const moveButton =
-			    task.bucket === "today"
-			    ? `<button onclick="moveToTomorrow('${doc.id}')">明日</button>`
-			    : "";
+            let moveButtons = "";
+
+			if (task.bucket === "today") {
+			    moveButtons = `
+			        <button onclick="moveToTomorrow('${doc.id}')">明日</button>
+			        <button onclick="moveToSomeday('${doc.id}')">そのうち</button>
+			    `;
+			}
+
+			else if (task.bucket === "tomorrow" || task.bucket === "someday") {
+			    moveButtons = `
+			        <button onclick="moveToToday('${doc.id}')">今日</button>
+			    `;
+			}
 
 			const html = `
 			    <div style="
@@ -216,7 +226,7 @@ window.loadTasks = async function () {
 			            ${completedMark} ${task.title}
 			        </span>
 
-			        ${moveButton}
+			        ${moveButtons}
 			    </div>
             `;
 
@@ -275,6 +285,55 @@ window.moveToTomorrow = async function (taskId) {
 
                 tomorrowCount: 1,
 
+                updatedAt: serverTimestamp()
+            }
+        );
+
+        loadTasks();
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("status").innerHTML =
+            "❌ 移動エラー<br>" + error.message;
+    }
+};
+
+window.moveToSomeday = async function (taskId) {
+
+    try {
+
+        await updateDoc(
+            doc(db, "tasks", taskId),
+            {
+                bucket: "someday",
+
+                somedayCount: 1,
+
+                updatedAt: serverTimestamp()
+            }
+        );
+
+        loadTasks();
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("status").innerHTML =
+            "❌ 移動エラー<br>" + error.message;
+    }
+};
+
+window.moveToToday = async function (taskId) {
+
+    try {
+
+        await updateDoc(
+            doc(db, "tasks", taskId),
+            {
+                bucket: "today",
                 updatedAt: serverTimestamp()
             }
         );
