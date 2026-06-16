@@ -60,7 +60,21 @@ button {
     type="text"
     placeholder="タスクを入力"
 >
+<br><br>
 
+<select id="importance">
+    <option value="3">
+        🔴 高
+    </option>
+    <option value="2" selected>
+        🟡 中
+    </option>
+    <option value="1">
+        ⚪ 低
+    </option>
+</select>
+
+<br><br>
 <button onclick="addTask()">
     追加
 </button>
@@ -137,6 +151,10 @@ const db = getFirestore(app);
 window.addTask = async function () {
 
     const title = document.getElementById("taskTitle").value.trim();
+    const importance =
+    Number(
+        document.getElementById("importance").value
+    );
 
     if (!title) {
         alert("タイトルを入力してください");
@@ -150,7 +168,7 @@ window.addTask = async function () {
                 title: title,
                 detail: "",
                 dueDate: null,
-                importance: 2,
+                importance: importance,
                 motivation: 2,
                 bucket: "today",
                 completed: false,
@@ -205,6 +223,19 @@ window.loadTasks = async function () {
             const task = docSnap.data();
             const completedMark = task.completed ? "☑" : "☐";
 
+			let importanceEmoji = "🟡";
+
+			if (task.importance === 3) {
+			    importanceEmoji = "🔴";
+			}
+
+			else if (task.importance === 2) {
+			    importanceEmoji = "🟡";
+			}
+			else {
+			    importanceEmoji = "⚪";
+			}
+
             let moveButtons = "";
 
             if (task.bucket === "today") {
@@ -236,7 +267,7 @@ window.loadTasks = async function () {
                         style="cursor:pointer;"
                         onclick="toggleComplete('${docSnap.id}', ${task.completed})"
                     >
-                        ${completedMark} ${task.title}${tomorrowBadge}
+                        ${completedMark} ${importanceEmoji} ${task.title}${tomorrowBadge}
                     </span>
                     ${moveButtons}
                 </div>
