@@ -115,6 +115,8 @@ import {
 	orderBy,
 	doc,
     updateDoc,
+    deleteDoc,
+    increment,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
@@ -179,12 +181,18 @@ window.loadTasks = async function () {
     const tomorrowList = document.getElementById("tomorrowList");
     const somedayList = document.getElementById("somedayList");
 
-    todayList.innerHTML = "";
-    tomorrowList.innerHTML = "";
-    somedayList.innerHTML = "";
+    todayList.innerHTML = "読み込み中...";
+    tomorrowList.innerHTML = "読み込み中...";
+    somedayList.innerHTML = "読み込み中...";
+
+    let todayTodo = "";
+    let todayDone = "";
+    let tomorrowTodo = "";
+    let tomorrowDone = "";
+    let somedayTodo = "";
+    let somedayDone = "";
 
     try {
-
         const q = query(
             collection(db, "tasks"),
             orderBy("createdAt", "desc")
@@ -192,62 +200,95 @@ window.loadTasks = async function () {
 
         const snapshot = await getDocs(q);
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach((docSnap) => {
 
-            const task = doc.data();
+            const task = docSnap.data();
             const completedMark = task.completed ? "☑" : "☐";
 
             let moveButtons = "";
 
-			if (task.bucket === "today") {
-			    moveButtons = `
-			        <button onclick="moveToTomorrow('${doc.id}')">明日</button>
-			        <button onclick="moveToSomeday('${doc.id}')">そのうち</button>
-			    `;
-			}
+            if (task.bucket === "today") {
+                moveButtons = `
+                    <button onclick="moveToTomorrow('${docSnap.id}')">明日</button>
+                    <button onclick="moveToSomeday('${docSnap.id}')">そのうち</button>
+                    <button onclick="deleteTask('${docSnap.id}')">削除</button>
+                `;
+            } else if (task.bucket === "tomorrow" || task.bucket === "someday") {
+                moveButtons = `
+                    <button onclick="moveToToday('${docSnap.id}')">今日</button>
+                    <button onclick="deleteTask('${docSnap.id}')">削除</button>
+                `;
+            }
 
-			else if (task.bucket === "tomorrow" || task.bucket === "someday") {
-			    moveButtons = `
-			        <button onclick="moveToToday('${doc.id}')">今日</button>
-			    `;
-			}
+			const tomorrowBadge =
+			    task.tomorrowCount && task.tomorrowCount > 0
+			    ? ` 🌙×${task.tomorrowCount}`
+			    : "";
 
-			const html = `
-			    <div style="
-			        background:white;
-			        padding:10px;
-			        margin:10px 0;
-			        border-radius:8px;
-			    ">
-			        <span
-			            style="cursor:pointer;"
-			            onclick="toggleComplete('${doc.id}', ${task.completed})"
-			        >
-			            ${completedMark} ${task.title}
-			        </span>
-
-			        ${moveButtons}
-			    </div>
+            const html = `
+                <div style="
+                    background:white;
+                    padding:10px;
+                    margin:10px 0;
+                    border-radius:8px;
+                ">
+                    <span
+                        style="cursor:pointer;"
+                        onclick="toggleComplete('${docSnap.id}', ${task.completed})"
+                    >
+                        ${completedMark} ${task.title}${tomorrowBadge}
+                    </span>
+                    ${moveButtons}
+                </div>
             `;
 
             if (task.bucket === "today") {
-                todayList.innerHTML += html;
+                if (task.completed) {
+                    todayDone += html;
+                } else {
+                    todayTodo += html;
+                }
+            } else if (task.bucket === "tomorrow") {
+                if (task.completed) {
+                    tomorrowDone += html;
+                } else {
+                    tomorrowTodo += html;
+                }
+            } else if (task.bucket === "someday") {
+                if (task.completed) {
+                    somedayDone += html;
+                } else {
+                    somedayTodo += html;
+                }
             }
-
-            else if (task.bucket === "tomorrow") {
-                tomorrowList.innerHTML += html;
-            }
-
-            else if (task.bucket === "someday") {
-                somedayList.innerHTML += html;
-            }
-
         });
 
+        todayList.innerHTML = `
+            <h4>未完了</h4>
+            ${todayTodo || "<p>なし</p>"}
+            <hr>
+            <h4>完了済み</h4>
+            ${todayDone || "<p>なし</p>"}
+        `;
+
+        tomorrowList.innerHTML = `
+            <h4>未完了</h4>
+            ${tomorrowTodo || "<p>なし</p>"}
+            <hr>
+            <h4>完了済み</h4>
+            ${tomorrowDone || "<p>なし</p>"}
+        `;
+
+        somedayList.innerHTML = `
+            <h4>未完了</h4>
+            ${somedayTodo || "<p>なし</p>"}
+            <hr>
+            <h4>完了済み</h4>
+            ${somedayDone || "<p>なし</p>"}
+        `;
+
     } catch (error) {
-
         console.error(error);
-
         document.getElementById("status").innerHTML =
             "❌ 読み込みエラー<br>" + error.message;
     }
@@ -282,9 +323,7 @@ window.moveToTomorrow = async function (taskId) {
             doc(db, "tasks", taskId),
             {
                 bucket: "tomorrow",
-
-                tomorrowCount: 1,
-
+                tomorrowCount: increment(1),
                 updatedAt: serverTimestamp()
             }
         );
@@ -346,6 +385,32 @@ window.moveToToday = async function (taskId) {
 
         document.getElementById("status").innerHTML =
             "❌ 移動エラー<br>" + error.message;
+    }
+};
+
+window.deleteTask = async function (taskId) {
+
+    const ok = confirm("このタスクを削除しますか？");
+
+    if (!ok) {
+        return;
+    }
+
+    try {
+        await deleteDoc(
+            doc(db, "tasks", taskId)
+        );
+
+        document.getElementById("status").innerHTML =
+            "🗑️ 削除しました";
+
+        loadTasks();
+
+    } catch (error) {
+        console.error(error);
+
+        document.getElementById("status").innerHTML =
+            "❌ 削除エラー<br>" + error.message;
     }
 };
 
