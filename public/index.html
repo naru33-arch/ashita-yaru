@@ -79,6 +79,33 @@ button {
 
 display:flex;
 
+.drag-handle {
+    width: 20px;
+    text-align: center;
+	cursor: grab;
+    padding-left: 8px;
+    color: #999;
+    user-select: none;
+    display: inline-block;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.drag-handle:hover {
+    cursor: grab;
+    color: #333;
+}
+
+.sortable-list {
+    min-height: 10px;
+}
+
+.task-card.dragging {
+    opacity: 0.5;
+}
+
 </style>
 
 </head>
@@ -359,11 +386,13 @@ window.loadTasks = async function () {
 			    : "";
 
 			const html = `
-			    <div class="task-card">
+			    <div class="task-card" data-id="${docSnap.id}">
 
 			        <span
-			            style="cursor:pointer;
-			            flex:1;
+			            style="
+			                cursor:pointer;
+			                flex:1;
+			                user-select:none;
 			            "
 			            onclick="toggleComplete('${docSnap.id}', ${task.completed})"
 			        >
@@ -373,6 +402,8 @@ window.loadTasks = async function () {
 			        <div class="task-buttons">
 			            ${moveButtons}
 			        </div>
+
+			        <span class="drag-handle">⋮⋮</span>
 
 			    </div>
 			`;
@@ -398,30 +429,42 @@ window.loadTasks = async function () {
             }
         });
 
-        todayList.innerHTML = `
-            <h4>未完了</h4>
-            ${todayTodo || "<p>なし</p>"}
-            <hr>
-            <h4>完了済み</h4>
-            ${todayDone || "<p>なし</p>"}
-        `;
+		todayList.innerHTML = `
+		    <h4>未完了</h4>
+		    <div class="sortable-list" data-bucket="today">
+		        ${todayTodo || "<p>なし</p>"}
+		    </div>
 
-        tomorrowList.innerHTML = `
-            <h4>未完了</h4>
-            ${tomorrowTodo || "<p>なし</p>"}
-            <hr>
-            <h4>完了済み</h4>
-            ${tomorrowDone || "<p>なし</p>"}
-        `;
+		    <hr>
 
-        somedayList.innerHTML = `
-            <h4>未完了</h4>
-            ${somedayTodo || "<p>なし</p>"}
-            <hr>
-            <h4>完了済み</h4>
-            ${somedayDone || "<p>なし</p>"}
-        `;
+		    <h4>完了済み</h4>
+		    ${todayDone || "<p>なし</p>"}
+		`;
 
+		tomorrowList.innerHTML = `
+		    <h4>未完了</h4>
+		    <div class="sortable-list" data-bucket="tomorrow">
+		        ${tomorrowTodo || "<p>なし</p>"}
+		    </div>
+
+		    <hr>
+
+		    <h4>完了済み</h4>
+		    ${tomorrowDone || "<p>なし</p>"}
+		`;
+
+		somedayList.innerHTML = `
+		    <h4>未完了</h4>
+		    <div class="sortable-list" data-bucket="someday">
+		        ${somedayTodo || "<p>なし</p>"}
+		    </div>
+
+		    <hr>
+
+		    <h4>完了済み</h4>
+		    ${somedayDone || "<p>なし</p>"}
+		`;
+		initSortable();
     } catch (error) {
         console.error(error);
         document.getElementById("status").innerHTML =
@@ -586,11 +629,56 @@ window.editTask = async function (taskId, currentTitle) {
     }
 };
 
+window.initSortable = function () {
+
+    document.querySelectorAll(".sortable-list").forEach((list) => {
+
+        new Sortable(list, {
+            animation: 150,
+            handle: ".drag-handle",
+            ghostClass: "dragging",
+
+            onEnd: async function () {
+
+                const cards = list.querySelectorAll(".task-card");
+
+                try {
+                    const updates = [];
+
+                    cards.forEach((card, index) => {
+                        const taskId = card.dataset.id;
+
+                        updates.push(
+                            updateDoc(
+                                doc(db, "tasks", taskId),
+                                {
+                                    sortOrder: (index + 1) * 1000,
+                                    updatedAt: serverTimestamp()
+                                }
+                            )
+                        );
+                    });
+
+                    await Promise.all(updates);
+
+                    document.getElementById("status").innerHTML =
+                        "↕️ 並び順を保存しました";
+
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById("status").innerHTML =
+                        "❌ 並び替え保存エラー<br>" + error.message;
+                }
+            }
+        });
+    });
+};
+
 window.addEventListener("load", function () {
     loadTasks();
 });
 
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </body>
 </html>
