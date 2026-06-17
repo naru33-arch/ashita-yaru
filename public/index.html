@@ -36,6 +36,49 @@ button {
     background: white;
     border-radius: 8px;
 }
+
+.task-card {
+
+    background: white;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 8px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    gap: 10px;
+}
+
+.task-buttons {
+    opacity: 0;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.task-buttons button {
+    font-size: 18px;
+    padding: 2px 4px;
+    margin-left: 2px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.task-buttons button:hover {
+
+    opacity: 0.6;
+}
+
+.task-card:hover .task-buttons {
+
+    opacity: 1;
+}
+
+display:flex;
+
 </style>
 
 </head>
@@ -75,6 +118,33 @@ button {
 </select>
 
 <br><br>
+
+<select id="motivation">
+
+    <option value="5">
+        🚀 やるぞ
+    </option>
+
+    <option value="4">
+        🙂 普通
+    </option>
+
+    <option value="3" selected>
+        😐 微妙
+    </option>
+
+    <option value="2">
+        🥱 やりたくない
+    </option>
+
+    <option value="1">
+        💀 無理
+    </option>
+
+</select>
+
+<br><br>
+
 <button onclick="addTask()">
     追加
 </button>
@@ -154,8 +224,11 @@ window.addTask = async function () {
     const importance =
     Number(
         document.getElementById("importance").value
-    );
-
+    	);
+	const motivation =
+    	Number(
+        	document.getElementById("motivation").value
+    	);
     if (!title) {
         alert("タイトルを入力してください");
         return;
@@ -169,7 +242,7 @@ window.addTask = async function () {
                 detail: "",
                 dueDate: null,
                 importance: importance,
-                motivation: 2,
+                motivation: motivation,
                 bucket: "today",
                 completed: false,
                 tomorrowCount: 0,
@@ -236,43 +309,74 @@ window.loadTasks = async function () {
 			    importanceEmoji = "⚪";
 			}
 
+			let motivationEmoji = "😐";
+
+			if (task.motivation === 5) {
+			    motivationEmoji = "🚀";
+			}
+
+			else if (task.motivation === 4) {
+			    motivationEmoji = "🙂";
+			}
+
+			else if (task.motivation === 3) {
+			    motivationEmoji = "😐";
+			}
+
+			else if (task.motivation === 2) {
+			    motivationEmoji = "🥱";
+			}
+
+			else {
+			    motivationEmoji = "💀";
+			}
+
             let moveButtons = "";
 
             if (task.bucket === "today") {
-                moveButtons = `
-                    <button onclick="moveToTomorrow('${docSnap.id}')">明日</button>
-                    <button onclick="moveToSomeday('${docSnap.id}')">そのうち</button>
-                    <button onclick="deleteTask('${docSnap.id}')">削除</button>
-                `;
-            } else if (task.bucket === "tomorrow" || task.bucket === "someday") {
-                moveButtons = `
-                    <button onclick="moveToToday('${docSnap.id}')">今日</button>
-                    <button onclick="deleteTask('${docSnap.id}')">削除</button>
-                `;
-            }
+		    moveButtons = `
+		        <button onclick="editTask('${docSnap.id}', '${task.title}')">✏️</button>
+
+		        <button onclick="moveToTomorrow('${docSnap.id}')">🌙</button>
+
+		        <button onclick="moveToSomeday('${docSnap.id}')">📦</button>
+
+		        <button onclick="deleteTask('${docSnap.id}')">🗑️</button>
+		    `;
+			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
+			    moveButtons = `
+			        <button onclick="editTask('${docSnap.id}', '${task.title}')">✏️</button>
+
+			        <button onclick="moveToToday('${docSnap.id}')">↩️</button>
+
+			        <button onclick="deleteTask('${docSnap.id}')">🗑️</button>
+			    `;
+			}
 
 			const tomorrowBadge =
 			    task.tomorrowCount && task.tomorrowCount > 0
 			    ? ` 🌙×${task.tomorrowCount}`
 			    : "";
 
-            const html = `
-                <div style="
-                    background:white;
-                    padding:10px;
-                    margin:10px 0;
-                    border-radius:8px;
-                ">
-                    <span
-                        style="cursor:pointer;"
-                        onclick="toggleComplete('${docSnap.id}', ${task.completed})"
-                    >
-                        ${completedMark} ${importanceEmoji} ${task.title}${tomorrowBadge}
-                    </span>
-                    ${moveButtons}
-                </div>
-            `;
+			const html = `
+			    <div class="task-card">
 
+			        <span
+			            style="cursor:pointer;
+			            flex:1;
+			            "
+			            onclick="toggleComplete('${docSnap.id}', ${task.completed})"
+			        >
+			            ${completedMark} ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
+			        </span>
+
+			        <div class="task-buttons">
+			            ${moveButtons}
+			        </div>
+
+			    </div>
+			`;
+			
             if (task.bucket === "today") {
                 if (task.completed) {
                     todayDone += html;
@@ -444,6 +548,47 @@ window.deleteTask = async function (taskId) {
             "❌ 削除エラー<br>" + error.message;
     }
 };
+
+window.editTask = async function (taskId, currentTitle) {
+
+    const newTitle = prompt("タスク名を編集", currentTitle);
+
+    if (newTitle === null) {
+        return;
+    }
+
+    const title = newTitle.trim();
+
+    if (!title) {
+        alert("タイトルは空にできません");
+        return;
+    }
+
+    try {
+        await updateDoc(
+            doc(db, "tasks", taskId),
+            {
+                title: title,
+                updatedAt: serverTimestamp()
+            }
+        );
+
+        document.getElementById("status").innerHTML =
+            "✏️ 更新しました";
+
+        loadTasks();
+
+    } catch (error) {
+        console.error(error);
+
+        document.getElementById("status").innerHTML =
+            "❌ 更新エラー<br>" + error.message;
+    }
+};
+
+window.addEventListener("load", function () {
+    loadTasks();
+});
 
 </script>
 
