@@ -117,13 +117,7 @@ display:flex;
 ```
 <h1>📖 明日できることは明日やる</h1>
 
-<p>
-    Firestore接続テスト
-</p>
-
-<div id="status">
-    ボタンを押してください
-</div>
+<div id="status" style="display:none;"></div>
 
 <input
     id="taskTitle"
@@ -180,22 +174,9 @@ display:flex;
 
 <h2>今日</h2>
 
-<div id="taskList">
-</div>
-
 <div id="status">
     タスクを入力してください
 </div>
-
-<!--
-	<button onclick="testAddTask()">
-	    Firestore接続テスト
-	</button>
-
-	<button onclick="loadTasks()">
-	    Firestoreから読み込み
-	</button>
--->
 
 <h2>今日</h2>
 <div id="todayList"></div>
@@ -322,6 +303,11 @@ window.loadTasks = async function () {
 
             const task = docSnap.data();
             const completedMark = task.completed ? "☑" : "☐";
+            let titleStyle = "";
+			if (task.completed) {
+			    titleStyle =
+        			"text-decoration: line-through; opacity: 0.5;";
+			}
 
 			let importanceEmoji = "🟡";
 
@@ -393,6 +379,7 @@ window.loadTasks = async function () {
 			                cursor:pointer;
 			                flex:1;
 			                user-select:none;
+			                ${titleStyle}
 			            "
 			            onclick="toggleComplete('${docSnap.id}', ${task.completed})"
 			        >
