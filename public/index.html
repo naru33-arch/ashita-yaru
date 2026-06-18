@@ -106,6 +106,100 @@ display:flex;
     opacity: 0.5;
 }
 
+.hidden {
+    display: none;
+}
+
+.fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+
+    width: 64px;
+    height: 64px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: #5b4636;
+    color: white;
+
+    font-size: 24px;
+    cursor: pointer;
+
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+
+.task-form {
+    position: fixed;
+    left: 50%;
+    bottom: 88px;
+    transform: translateX(-50%);
+
+    width: 92%;
+    max-width: 360px;
+
+    background: #fffdf8;
+    padding: 12px;
+
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+
+    z-index: 1000;
+}
+
+.task-form input,
+.task-form select,
+.task-form button {
+    font-size: 16px;
+    height: 42px;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.task-form input {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.form-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.form-row select {
+    flex: 1;
+    min-width: 0;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.form-actions button {
+    width: auto;
+    min-width: 72px;
+}
+
+.task-form button {
+    border: 1px solid #999;
+}
+
+.form-actions button:first-child {
+    background: #5b4636;
+    color: white;
+    border: none;
+}
+
+.form-actions button:last-child {
+    background: #eeeeee;
+}
+
+background: #8b7355;
 </style>
 
 </head>
@@ -119,55 +213,36 @@ display:flex;
 
 <div id="status" style="display:none;"></div>
 
-<input
-    id="taskTitle"
-    type="text"
-    placeholder="タスクを入力"
->
-<br><br>
+<div id="taskForm" class="task-form hidden">
 
-<select id="importance">
-    <option value="3">
-        🔴 高
-    </option>
-    <option value="2" selected>
-        🟡 中
-    </option>
-    <option value="1">
-        ⚪ 低
-    </option>
-</select>
+    <input
+        id="taskTitle"
+        type="text"
+        placeholder="タスクを入力"
+    >
+	<div class="form-row">
+	    <select id="importance">
+	        <option value="3">🔴 高</option>
+	        <option value="2" selected>🟡 中</option>
+	        <option value="1">⚪ 低</option>
+	    </select>
 
-<br><br>
+	    <select id="motivation">
+	        <option value="5">🚀 やるぞ</option>
+	        <option value="4">🙂 普通</option>
+	        <option value="3" selected>😐 微妙</option>
+	        <option value="2">🥱 やりたくない</option>
+	        <option value="1">💀 無理</option>
+	    </select>
+	</div>
+	<div class="form-actions">
+    	<button onclick="addTask()">追加</button>
+    	<button onclick="closeTaskForm()">閉じる</button>
+	</div>
+</div>
 
-<select id="motivation">
-
-    <option value="5">
-        🚀 やるぞ
-    </option>
-
-    <option value="4">
-        🙂 普通
-    </option>
-
-    <option value="3" selected>
-        😐 微妙
-    </option>
-
-    <option value="2">
-        🥱 やりたくない
-    </option>
-
-    <option value="1">
-        💀 無理
-    </option>
-
-</select>
-
-<br><br>
-
-<button onclick="addTask()">
-    追加
+<button class="fab" onclick="openTaskForm()">
+    ＋
 </button>
 
 <hr>
@@ -264,8 +339,8 @@ window.addTask = async function () {
         );
 
         document.getElementById("taskTitle").value = "";
+		closeTaskForm();
         document.getElementById("status").innerHTML = "✅ 追加しました";
-
         loadTasks();
 
     } catch (error) {
@@ -664,6 +739,17 @@ window.initSortable = function () {
 window.addEventListener("load", function () {
     loadTasks();
 });
+
+window.openTaskForm = function () {
+    document.getElementById("taskForm").classList.remove("hidden");
+    document.querySelector(".fab").style.display = "none";
+    document.getElementById("taskTitle").focus();
+};
+
+window.closeTaskForm = function () {
+    document.getElementById("taskForm").classList.add("hidden");
+    document.querySelector(".fab").style.display = "block";
+};
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
