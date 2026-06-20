@@ -9,8 +9,9 @@
 <style>
 body {
     font-family: sans-serif;
-    margin: 20px;
-    background: #f5f1e8;
+    background: #f4f1e8;
+    margin: 0;
+    padding: 20px;
 }
 
 .container {
@@ -19,7 +20,20 @@ body {
 }
 
 h1 {
+    font-size: 22px;
     text-align: center;
+    white-space: nowrap;
+    color: #5b4636;
+    font-weight: bold;
+}
+
+h2 {
+
+    margin-top: 32px;
+
+    margin-bottom: 20px;
+
+    font-size: 28px;
 }
 
 button {
@@ -38,17 +52,20 @@ button {
 }
 
 .task-card {
-
-    background: white;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 8px;
+    background: transparent;
+    padding: 3px 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 1px solid #b8b2a5;
 
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
     gap: 10px;
+
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .task-buttons {
@@ -93,9 +110,27 @@ display:flex;
     cursor: grabbing;
 }
 
-.drag-handle:hover {
+.drag-handle {
+    font-size: 26px;
+    padding: 8px;
     cursor: grab;
-    color: #333;
+    user-select: none;
+    color: #666;
+    min-width: 30px;
+    text-align: center;
+}
+@media (max-width: 768px) {
+    .drag-handle {
+        font-size: 30px;
+        padding: 12px;
+        min-width: 40px;
+    }
+}
+.sortable-ghost {
+    opacity: 0.6;
+    transform: scale(1.03);
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
 .sortable-list {
@@ -104,6 +139,29 @@ display:flex;
 
 .task-card.dragging {
     opacity: 0.5;
+}
+
+.task-text {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .task-text {
+        flex: 1;
+        font-size: 18px;
+    }
+    .task-card {
+        touch-action: pan-y;
+    }
+/*    .task-buttons {
+        display: none;
+    } */
+}
+
+.task-card.swiped .task-buttons {
+    opacity: 1 !important;
+    display: flex !important;
 }
 
 .hidden {
@@ -157,6 +215,11 @@ display:flex;
     box-sizing: border-box;
 }
 
+.task-buttons button {
+    padding: 2px 4px;
+    font-size: 14px;
+}
+
 .task-form input {
     width: 100%;
     margin-bottom: 8px;
@@ -199,6 +262,14 @@ display:flex;
     background: #eeeeee;
 }
 
+.empty-task {
+    opacity: 0.35;
+}
+
+.task-buttons {
+    display: none;
+}
+
 background: #8b7355;
 </style>
 
@@ -208,7 +279,6 @@ background: #8b7355;
 
 <div class="container">
 
-```
 <h1>📖 明日できることは明日やる</h1>
 
 <div id="status" style="display:none;"></div>
@@ -245,27 +315,21 @@ background: #8b7355;
     ＋
 </button>
 
-<hr>
 
-<h2>今日</h2>
+<div id="status" style="display:none;"></div>
 
-<div id="status">
-    タスクを入力してください
-</div>
-
-<h2>今日</h2>
+<h2>今日できること</h2>
 <div id="todayList"></div>
 
 <hr>
 
-<h2>明日</h2>
+<h2>明日でいいこと</h2>
 <div id="tomorrowList"></div>
 
 <hr>
 
-<h2>そのうち</h2>
+<h2>いつかやること</h2>
 <div id="somedayList"></div>
-```
 
 </div>
 
@@ -296,10 +360,87 @@ const firebaseConfig = {
   appId: "1:965649048873:web:bec7089b9f2044b62a0338"
 };
 
-
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
+
+function emptyTask() {
+    return `
+        <div class="task-card empty-task">
+            ☐
+        </div>
+    `;
+}
+
+window.initSwipe = function () {
+	console.log("initSwipe called");
+
+    document.querySelectorAll(".task-card").forEach((card) => {
+
+        let startX = 0;
+        let startY = 0;
+
+        card.addEventListener("touchstart", function (event) {
+
+            if (event.target.closest(".drag-handle")) {
+                return;
+            }
+
+            if (event.target.closest("button")) {
+                return;
+            }
+
+            startX = event.touches[0].clientX;
+            startY = event.touches[0].clientY;
+
+        });
+
+        card.addEventListener("touchend", function (event) {
+			console.log("touchend fired");
+            if (!startX) {
+                return;
+            }
+
+            const endX = event.changedTouches[0].clientX;
+            const endY = event.changedTouches[0].clientY;
+
+            const diffX = endX - startX;
+            const diffY = endY - startY;
+            
+            console.log("diffX:", diffX, "diffY:", diffY);
+
+            if (Math.abs(diffY) > Math.abs(diffX)) {
+                startX = 0;
+                return;
+            }
+
+            // 左スワイプ：操作ボタン表示
+            if (diffX < -30) {
+
+                console.log("left swipe detected");
+                
+                document.querySelectorAll(".task-card").forEach((item) => {
+                    item.classList.remove("swiped");
+                });
+
+                card.classList.add("swiped");
+            }
+
+            // 右スワイプ：完了 / 未完了
+            if (diffX > 30) {
+
+                console.log("right swipe detected");
+                
+                const taskId = card.dataset.id;
+                const completed = card.dataset.completed === "true";
+
+                toggleComplete(taskId, completed);
+            }
+
+            startX = 0;
+        });
+    });
+};
 
 window.addTask = async function () {
 
@@ -447,9 +588,13 @@ window.loadTasks = async function () {
 			    : "";
 
 			const html = `
-			    <div class="task-card" data-id="${docSnap.id}">
+			    <div
+				    class="task-card"
+				    data-id="${docSnap.id}"
+				    data-completed="${task.completed}"
+				>
 
-			        <span
+			        <span class="task-text"
 			            style="
 			                cursor:pointer;
 			                flex:1;
@@ -465,7 +610,7 @@ window.loadTasks = async function () {
 			            ${moveButtons}
 			        </div>
 
-			        <span class="drag-handle">⋮⋮</span>
+			        <span class="drag-handle">☰</span>
 
 			    </div>
 			`;
@@ -492,41 +637,31 @@ window.loadTasks = async function () {
         });
 
 		todayList.innerHTML = `
-		    <h4>未完了</h4>
 		    <div class="sortable-list" data-bucket="today">
-		        ${todayTodo || "<p>なし</p>"}
+		        ${todayTodo || emptyTask()}
 		    </div>
 
-		    <hr>
-
-		    <h4>完了済み</h4>
-		    ${todayDone || "<p>なし</p>"}
+		    ${todayDone || emptyTask()}
 		`;
 
 		tomorrowList.innerHTML = `
-		    <h4>未完了</h4>
 		    <div class="sortable-list" data-bucket="tomorrow">
-		        ${tomorrowTodo || "<p>なし</p>"}
+		        ${tomorrowTodo || emptyTask()}
 		    </div>
 
-		    <hr>
-
-		    <h4>完了済み</h4>
-		    ${tomorrowDone || "<p>なし</p>"}
+		    ${tomorrowDone || emptyTask()}
 		`;
 
 		somedayList.innerHTML = `
-		    <h4>未完了</h4>
 		    <div class="sortable-list" data-bucket="someday">
-		        ${somedayTodo || "<p>なし</p>"}
+		        ${somedayTodo || emptyTask()}
 		    </div>
 
-		    <hr>
-
-		    <h4>完了済み</h4>
-		    ${somedayDone || "<p>なし</p>"}
+		    ${somedayDone || emptyTask()}
 		`;
 		initSortable();
+		initSwipe();
+
     } catch (error) {
         console.error(error);
         document.getElementById("status").innerHTML =
