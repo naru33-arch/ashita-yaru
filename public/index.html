@@ -69,10 +69,9 @@ button {
 }
 
 .task-buttons {
-    opacity: 0;
-    transition: opacity 0.2s;
-    display: flex;
+    display: none;
     align-items: center;
+    transition: opacity 0.2s;
 }
 
 .task-buttons button {
@@ -85,14 +84,21 @@ button {
 }
 
 .task-buttons button:hover {
-
     opacity: 0.6;
 }
 
 .task-card:hover .task-buttons {
-
-    opacity: 1;
+    display: flex;
 }
+@media (max-width: 768px) {
+    .task-buttons {
+        display: none;
+    }
+    .task-card.swiped .task-buttons {
+        display: flex !important;
+    }
+}
+
 
 display:flex;
 
