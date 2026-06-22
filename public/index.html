@@ -87,8 +87,14 @@ button {
     opacity: 0.6;
 }
 
-.task-card:hover .task-buttons {
-    display: flex;
+@media (min-width: 769px) {
+
+    .task-card:hover .task-buttons {
+        display: flex;
+    }
+
+}
+
 }
 @media (max-width: 768px) {
     .task-buttons {
@@ -156,6 +162,7 @@ display:flex;
     .task-text {
         flex: 1;
         font-size: 18px;
+        line-height: 1.4;
     }
     .task-card {
         touch-action: pan-y;
@@ -185,13 +192,13 @@ display:flex;
     border-radius: 50%;
     border: none;
 
-    background: #5b4636;
+    background: #7b5b43;
     color: white;
 
     font-size: 24px;
     cursor: pointer;
 
-    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
 }
 
 .task-form {
@@ -415,25 +422,29 @@ window.initSwipe = function () {
             
             console.log("diffX:", diffX, "diffY:", diffY);
 
+			if (Math.abs(diffX) < 60) {
+			    startX = 0;
+			    return;
+			}
             if (Math.abs(diffY) > Math.abs(diffX)) {
                 startX = 0;
                 return;
             }
 
             // 左スワイプ：操作ボタン表示
-            if (diffX < -30) {
+            if (diffX < -60) {
 
                 console.log("left swipe detected");
                 
                 document.querySelectorAll(".task-card").forEach((item) => {
                     item.classList.remove("swiped");
                 });
-
                 card.classList.add("swiped");
+
             }
 
             // 右スワイプ：完了 / 未完了
-            if (diffX > 30) {
+            if (diffX > 60) {
 
                 console.log("right swipe detected");
                 
@@ -528,7 +539,7 @@ window.loadTasks = async function () {
             let titleStyle = "";
 			if (task.completed) {
 			    titleStyle =
-        			"text-decoration: line-through; opacity: 0.5;";
+        			"text-decoration: line-through; opacity: 0.25;filter: grayscale(100%);";
 			}
 
 			let importanceEmoji = "🟡";
