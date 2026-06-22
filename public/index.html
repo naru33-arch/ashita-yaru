@@ -172,6 +172,12 @@ display:flex;
     } */
 }
 
+@media (max-width: 768px) {
+    .completed-mark {
+        display: none;
+    }
+}
+
 .task-card.swiped .task-buttons {
     opacity: 1 !important;
     display: flex !important;
@@ -618,9 +624,9 @@ window.loadTasks = async function () {
 			                user-select:none;
 			                ${titleStyle}
 			            "
-			            onclick="toggleComplete('${docSnap.id}', ${task.completed})"
+			            onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
 			        >
-			            ${completedMark} ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
+			            <span class="completed-mark">${completedMark}</span> ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
 			        </span>
 
 			        <div class="task-buttons">
@@ -705,6 +711,17 @@ window.toggleComplete = async function (taskId, completed) {
         document.getElementById("status").innerHTML =
             "❌ 更新エラー<br>" + error.message;
     }
+};
+
+window.handleTaskClick = function (taskId, completed) {
+
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        return;
+    }
+
+    toggleComplete(taskId, completed);
 };
 
 window.moveToTomorrow = async function (taskId) {
