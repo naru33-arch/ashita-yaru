@@ -7,16 +7,14 @@
 <title>明日できることは明日やる</title>
 
 <style>
+/* =========================
+   1. GLOBAL
+========================= */
 body {
     font-family: sans-serif;
     background: #f4f1e8;
     margin: 0;
     padding: 20px;
-}
-
-.container {
-    max-width: 600px;
-    margin: auto;
 }
 
 h1 {
@@ -28,29 +26,30 @@ h1 {
 }
 
 h2 {
-
     margin-top: 32px;
-
     margin-bottom: 20px;
-
-    font-size: 28px;
+    font-size: 20px;
 }
 
-button {
-    width: 100%;
-    padding: 15px;
-    font-size: 18px;
-    margin-top: 20px;
-    cursor: pointer;
+.hidden {
+    display: none;
 }
 
-#status {
-    margin-top: 20px;
-    padding: 10px;
-    background: white;
-    border-radius: 8px;
+/* =========================
+   2. LAYOUT
+========================= */
+.container {
+    max-width: 600px;
+    margin: auto;
 }
 
+.sortable-list {
+    min-height: 10px;
+}
+
+/* =========================
+   3. TASK CARD
+========================= */
 .task-card {
     background: transparent;
     padding: 3px 0;
@@ -66,6 +65,26 @@ button {
 
     width: 100%;
     box-sizing: border-box;
+}
+
+.task-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.empty-task {
+    opacity: 0.35;
+}
+
+/* =========================
+   4. BUTTONS
+========================= */
+button {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    margin-top: 20px;
+    cursor: pointer;
 }
 
 .task-buttons {
@@ -87,40 +106,19 @@ button {
     opacity: 0.6;
 }
 
-@media (min-width: 769px) {
 
-    .task-card:hover .task-buttons {
-        display: flex;
-    }
-
+.task-card.swiped .task-buttons {
+    opacity: 1 !important;
+    display: flex !important;
 }
 
-}
-@media (max-width: 768px) {
-    .task-buttons {
-        display: none;
-    }
-    .task-card.swiped .task-buttons {
-        display: flex !important;
-    }
+.task-card.dragging {
+    opacity: 0.5;
 }
 
-
-display:flex;
-
-.drag-handle {
-    width: 20px;
-    text-align: center;
-	cursor: grab;
-    padding-left: 8px;
-    color: #999;
-    user-select: none;
-    display: inline-block;
-}
-
-.drag-handle:active {
-    cursor: grabbing;
-}
+/* =========================
+   5. DRAG & SORT
+========================= */
 
 .drag-handle {
     font-size: 26px;
@@ -131,13 +129,11 @@ display:flex;
     min-width: 30px;
     text-align: center;
 }
-@media (max-width: 768px) {
-    .drag-handle {
-        font-size: 30px;
-        padding: 12px;
-        min-width: 40px;
-    }
+
+.drag-handle:active {
+    cursor: grabbing;
 }
+
 .sortable-ghost {
     opacity: 0.6;
     transform: scale(1.03);
@@ -145,46 +141,14 @@ display:flex;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-.sortable-list {
-    min-height: 10px;
-}
-
-.task-card.dragging {
-    opacity: 0.5;
-}
-
-.task-text {
-    flex: 1;
-    min-width: 0;
-}
-
-@media (max-width: 768px) {
-    .task-text {
-        flex: 1;
-        font-size: 18px;
-        line-height: 1.4;
-    }
-    .task-card {
-        touch-action: pan-y;
-    }
-/*    .task-buttons {
-        display: none;
-    } */
-}
-
-@media (max-width: 768px) {
-    .completed-mark {
-        display: none;
-    }
-}
-
-.task-card.swiped .task-buttons {
-    opacity: 1 !important;
-    display: flex !important;
-}
-
-.hidden {
-    display: none;
+/* =========================
+   6. FAB & FORM
+========================= */
+#status {
+    margin-top: 20px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
 }
 
 .fab {
@@ -225,34 +189,10 @@ display:flex;
     z-index: 1000;
 }
 
-.task-form input,
-.task-form select,
-.task-form button {
-    font-size: 16px;
-    height: 42px;
-    padding: 8px;
-    box-sizing: border-box;
-}
-
-.task-buttons button {
-    padding: 2px 4px;
-    font-size: 14px;
-}
-
-.task-form input {
-    width: 100%;
-    margin-bottom: 8px;
-}
-
 .form-row {
     display: flex;
     gap: 8px;
     margin-bottom: 8px;
-}
-
-.form-row select {
-    flex: 1;
-    min-width: 0;
 }
 
 .form-actions {
@@ -262,34 +202,64 @@ display:flex;
     margin-top: 8px;
 }
 
-.form-actions button {
-    width: auto;
-    min-width: 72px;
-}
-
+.task-form input,
+.task-form select,
 .task-form button {
-    border: 1px solid #999;
+    font-size: 16px;
+    height: 42px;
+    padding: 8px;
+    box-sizing: border-box;
 }
 
-.form-actions button:first-child {
-    background: #5b4636;
-    color: white;
-    border: none;
+.task-form input {
+    width: 100%;
+    margin-bottom: 8px;
 }
 
-.form-actions button:last-child {
-    background: #eeeeee;
+/* =========================
+   7. MOBILE
+========================= */
+
+@media (min-width: 769px) {
+    .task-card:hover .task-buttons {
+        display: flex;
+    }
 }
 
-.empty-task {
-    opacity: 0.35;
+@media (max-width: 768px) {
+    .task-buttons {
+        display: none;
+    }
+    .task-card.swiped .task-buttons {
+        display: flex !important;
+    }
 }
 
-.task-buttons {
-    display: none;
+@media (max-width: 768px) {
+    .drag-handle {
+        font-size: 30px;
+        padding: 12px;
+        min-width: 40px;
+    }
 }
 
-background: #8b7355;
+@media (max-width: 768px) {
+    .task-text {
+        flex: 1;
+        font-size: 18px;
+        line-height: 1.4;
+    }
+    .task-card {
+        touch-action: pan-y;
+    }
+}
+
+@media (max-width: 768px) {
+    .completed-mark {
+        display: none;
+    }
+}
+
 </style>
 
 </head>
