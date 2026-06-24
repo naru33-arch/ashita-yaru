@@ -27,8 +27,11 @@ h1 {
 
 h2 {
     margin-top: 32px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     font-size: 20px;
+    color: #5b4636;
+    border-bottom: 2px solid #c8bca8;
+    padding-bottom: 6px;
 }
 
 .hidden {
@@ -56,7 +59,7 @@ h2 {
     margin: 0;
     border-radius: 0;
     box-shadow: none;
-    border-bottom: 1px solid #b8b2a5;
+    border-bottom: 1px solid #d6cdbc;
 
     display: flex;
     justify-content: space-between;
@@ -70,6 +73,7 @@ h2 {
 .task-text {
     flex: 1;
     min-width: 0;
+    color: #3f3428;
 }
 
 .empty-task {
@@ -221,13 +225,14 @@ h2 {
    7. MOBILE
 ========================= */
 /* PC hover */
-@media (min-width: 769px) {
+@media (hover: hover) and (pointer: fine) {
     .task-card:hover .task-buttons {
         display: flex !important;
         opacity: 1 !important;
     }
 }
 
+/* Mobile */
 @media (max-width: 768px) {
 
 	/* swipe action buttons (mobile gesture) */
@@ -307,17 +312,17 @@ h2 {
 
 <div id="status" style="display:none;"></div>
 
-<h2>今日できること</h2>
+<h2>📖 今日できること</h2>
 <div id="todayList"></div>
 
 <hr>
 
-<h2>明日でいいこと</h2>
+<h2>🌙 明日でいいこと</h2>
 <div id="tomorrowList"></div>
 
 <hr>
 
-<h2>いつかやること</h2>
+<h2>📦 いつかやること</h2>
 <div id="somedayList"></div>
 
 </div>
