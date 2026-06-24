@@ -79,14 +79,6 @@ h2 {
 /* =========================
    4. BUTTONS
 ========================= */
-button {
-    width: 100%;
-    padding: 15px;
-    font-size: 18px;
-    margin-top: 20px;
-    cursor: pointer;
-}
-
 .task-buttons {
     display: none;
     align-items: center;
@@ -144,12 +136,6 @@ button {
 /* =========================
    6. FAB & FORM
 ========================= */
-#status {
-    margin-top: 20px;
-    padding: 10px;
-    background: white;
-    border-radius: 8px;
-}
 
 .fab {
     position: fixed;
@@ -216,45 +202,54 @@ button {
     margin-bottom: 8px;
 }
 
+#overlay {
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.35);
+
+    z-index: 999;
+}
+
 /* =========================
    7. MOBILE
 ========================= */
-
+/* PC hover */
 @media (min-width: 769px) {
     .task-card:hover .task-buttons {
-        display: flex;
+        display: flex !important;
+        opacity: 1 !important;
     }
 }
 
 @media (max-width: 768px) {
-    .task-buttons {
-        display: none;
-    }
+
+	/* swipe action buttons (mobile gesture) */
     .task-card.swiped .task-buttons {
         display: flex !important;
     }
-}
 
-@media (max-width: 768px) {
     .drag-handle {
         font-size: 30px;
         padding: 12px;
         min-width: 40px;
     }
-}
 
-@media (max-width: 768px) {
     .task-text {
-        flex: 1;
         font-size: 18px;
         line-height: 1.4;
     }
+
     .task-card {
         touch-action: pan-y;
     }
-}
 
-@media (max-width: 768px) {
     .completed-mark {
         display: none;
     }
@@ -304,6 +299,11 @@ button {
     ＋
 </button>
 
+<div
+    id="overlay"
+    class="hidden"
+    onclick="closeTaskForm()"
+></div>
 
 <div id="status" style="display:none;"></div>
 
@@ -881,12 +881,14 @@ window.addEventListener("load", function () {
 
 window.openTaskForm = function () {
     document.getElementById("taskForm").classList.remove("hidden");
+    document.getElementById("overlay").classList.remove("hidden");
     document.querySelector(".fab").style.display = "none";
     document.getElementById("taskTitle").focus();
 };
 
 window.closeTaskForm = function () {
     document.getElementById("taskForm").classList.add("hidden");
+    document.getElementById("overlay").classList.add("hidden");
     document.querySelector(".fab").style.display = "block";
 };
 
