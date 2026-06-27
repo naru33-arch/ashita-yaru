@@ -54,6 +54,11 @@ h2 {
 /* =========================
    3. TASK CARD
 ========================= */
+.swipe-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
 .task-card {
     background: transparent;
     padding: 3px 0;
@@ -69,6 +74,14 @@ h2 {
 
     width: 100%;
     box-sizing: border-box;
+    
+    position: relative;
+	z-index: 2;
+	
+	background: #f4f1e8;
+	
+	transition: transform 0.16s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
 }
 
 .task-text {
@@ -84,11 +97,35 @@ h2 {
 /* =========================
    4. BUTTONS
 ========================= */
+.swipe-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    width: 210px;
+    height: 100%;
+
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+
+    padding-right: 6px;
+
+    z-index: 1;
+}
+
+.task-card.swiped-left {
+    transform: translateX(-210px);
+}
+
+/* =========================
 .task-buttons {
     display: none;
     align-items: center;
     transition: opacity 0.2s;
 }
+========================= */
 
 .task-buttons button {
     font-size: 18px;
@@ -226,12 +263,14 @@ h2 {
    7. MOBILE
 ========================= */
 /* PC hover */
+/* =========================
 @media (hover: hover) and (pointer: fine) {
     .task-card:hover .task-buttons {
         display: flex !important;
         opacity: 1 !important;
     }
 }
+========================= */
 
 /* Mobile */
 @media (max-width: 768px) {
@@ -375,7 +414,7 @@ function emptyTask() {
 }
 
 window.initSwipe = function () {
-	console.log("initSwipe called");
+	// console.log("initSwipe called");
 
     document.querySelectorAll(".task-card").forEach((card) => {
 
@@ -391,14 +430,37 @@ window.initSwipe = function () {
             if (event.target.closest("button")) {
                 return;
             }
+            
+            document.querySelectorAll(".task-card").forEach((item) => {
+		        if (item !== card) {
+            	item.classList.remove("swiped-left");
+		        }
+		    });
 
             startX = event.touches[0].clientX;
             startY = event.touches[0].clientY;
 
         });
 
+		card.addEventListener("touchmove", (e) => {
+
+		    let currentX = e.touches[0].clientX;
+		    let diffX = currentX - startX;
+
+		    // 左スワイプだけ
+		    if (diffX < 0) {
+
+		        // 最大160pxまで
+		        let moveX = Math.max(diffX, -220);
+
+		        //card.style.transform =
+		        //    `translateX(${moveX}px)`;
+		    }
+
+		});
+
         card.addEventListener("touchend", function (event) {
-			console.log("touchend fired");
+			// console.log("touchend fired");
             if (!startX) {
                 return;
             }
@@ -409,7 +471,7 @@ window.initSwipe = function () {
             const diffX = endX - startX;
             const diffY = endY - startY;
             
-            console.log("diffX:", diffX, "diffY:", diffY);
+            // console.log("diffX:", diffX, "diffY:", diffY);
 
 			if (Math.abs(diffX) < 60) {
 			    startX = 0;
@@ -422,20 +484,26 @@ window.initSwipe = function () {
 
             // 左スワイプ：操作ボタン表示
             if (diffX < -60) {
-
-                console.log("left swipe detected");
+			
+             	// console.log("left swipe detected");
                 
                 document.querySelectorAll(".task-card").forEach((item) => {
-                    item.classList.remove("swiped");
+                    item.classList.remove("swiped-left");
                 });
-                card.classList.add("swiped");
+                card.classList.add("swiped-left");
 
             }
-
+			
             // 右スワイプ：完了 / 未完了
             if (diffX > 60) {
 
-                console.log("right swipe detected");
+                // console.log("right swipe detected");
+                
+                if (card.classList.contains("swiped-left")) {
+        			card.classList.remove("swiped-left");
+			        startX = 0;
+			        return;
+			    }
                 
                 const taskId = card.dataset.id;
                 const completed = card.dataset.completed === "true";
@@ -445,6 +513,12 @@ window.initSwipe = function () {
 
             startX = 0;
         });
+    });
+};
+
+window.closeAllSwipe = function () {
+    document.querySelectorAll(".task-card").forEach((card) => {
+        card.classList.remove("swiped-left");
     });
 };
 
@@ -594,33 +668,38 @@ window.loadTasks = async function () {
 			    : "";
 
 			const html = `
-			    <div
-				    class="task-card"
-				    data-id="${docSnap.id}"
-				    data-completed="${task.completed}"
-				>
+			    <div class="swipe-wrapper">
 
-			        <span class="task-text"
-			            style="
-			                cursor:pointer;
-			                flex:1;
-			                user-select:none;
-			                ${titleStyle}
-			            "
-			            onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
+			        <div
+			            class="task-card"
+			            data-id="${docSnap.id}"
+			            data-completed="${task.completed}"
 			        >
-			            <span class="completed-mark">${completedMark}</span> ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
-			        </span>
 
-			        <div class="task-buttons">
+			            <span
+			                class="task-text"
+			                style="
+			                    cursor:default;
+			                    flex:1;
+			                    user-select:none;
+			                    ${titleStyle}
+			                "
+			                onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
+			            >
+			                <span class="completed-mark">${completedMark}</span>
+			                ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
+			            </span>
+
+			            <span class="drag-handle">☰</span>
+
+			        </div>
+
+			        <div class="swipe-actions">
 			            ${moveButtons}
 			        </div>
 
-			        <span class="drag-handle">☰</span>
-
 			    </div>
-			`;
-			
+			`;			
             if (task.bucket === "today") {
                 if (task.completed) {
                     todayDone += html;
@@ -720,6 +799,7 @@ window.moveToTomorrow = async function (taskId) {
             }
         );
 
+        closeAllSwipe();
         loadTasks();
 
     } catch (error) {
@@ -746,6 +826,7 @@ window.moveToSomeday = async function (taskId) {
             }
         );
 
+        closeAllSwipe();
         loadTasks();
 
     } catch (error) {
@@ -769,6 +850,7 @@ window.moveToToday = async function (taskId) {
             }
         );
 
+        closeAllSwipe();
         loadTasks();
 
     } catch (error) {
@@ -796,6 +878,7 @@ window.deleteTask = async function (taskId) {
         document.getElementById("status").innerHTML =
             "🗑️ 削除しました";
 
+        closeAllSwipe();
         loadTasks();
 
     } catch (error) {
@@ -833,6 +916,7 @@ window.editTask = async function (taskId, currentTitle) {
         document.getElementById("status").innerHTML =
             "✏️ 更新しました";
 
+        closeAllSwipe();
         loadTasks();
 
     } catch (error) {
