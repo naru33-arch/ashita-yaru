@@ -736,21 +736,19 @@ window.loadTasks = async function () {
 
             if (task.bucket === "today") {
 		    moveButtons = `
-		        <button onclick="editTask('${docSnap.id}', '${task.title}')">✏️</button>
+		        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}')">✏️</button>
 
-		        <button onclick="moveToTomorrow('${docSnap.id}')">🌙</button>
+		        <button onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">🌙</button>
 
-		        <button onclick="moveToSomeday('${docSnap.id}')">📦</button>
+		        <button onclick="event.stopPropagation(); moveToSomeday('${docSnap.id}')">📦</button>
 
-		        <button onclick="deleteTask('${docSnap.id}')">🗑️</button>
+		        <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
 		    `;
 			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
 			    moveButtons = `
-			        <button onclick="editTask('${docSnap.id}', '${task.title}')">✏️</button>
-
-			        <button onclick="moveToToday('${docSnap.id}')">↩️</button>
-
-			        <button onclick="deleteTask('${docSnap.id}')">🗑️</button>
+			        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}')">✏️</button>
+			        <button onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">↩️</button>
+			        <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
 			    `;
 			}
 
