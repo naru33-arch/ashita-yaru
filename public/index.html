@@ -29,7 +29,7 @@ h1 {
 }
 
 h2 {
-    margin-top: 32px;
+    margin-top: 18px;
     margin-bottom: 12px;
     font-size: 20px;
     color: #5b4636;
@@ -45,6 +45,25 @@ h2 {
     max-width: 600px;
     margin: auto;
     padding-bottom: 120px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 14px;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #c8bca8;
+    font-weight: bold;
+}
+
+.section-header span:last-child {
+    font-size: 12px;
+    color: #8a8175;
+    font-weight: normal;
+    font-style: italic;
+	opacity: 0.7;
 }
 
 /* =========================
@@ -120,13 +139,23 @@ h2 {
 
     padding-right: 6px;
 
-    background: rgba(244, 241, 232, 0.96);
+    background: rgba(230, 224, 210, 0.98);
 
     z-index: 5;
 }
 
 .swipe-wrapper.open .swipe-actions {
     display: flex;
+}
+
+.swipe-actions {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.swipe-wrapper.open .swipe-actions {
+    display: flex;
+    opacity: 1;
 }
 
 /* =========================
@@ -162,6 +191,10 @@ h2 {
 
 .task-card.dragging {
     opacity: 0.5;
+}
+
+.swipe-wrapper.open .drag-handle {
+    opacity: 0;
 }
 
 /* =========================
@@ -339,7 +372,7 @@ h2 {
 
 <div class="container">
 
-<h1>📖 明日できることは明日やる</h1>
+<!-- <h1>📖 明日できることは明日やる</h1> -->
 
 <div id="status" style="display:none;"></div>
 
@@ -383,10 +416,16 @@ h2 {
 
 <div id="status" style="display:none;"></div>
 
-<h2>📖 今日できること</h2>
+<div class="section-header">
+    <span>📖 今日やること</span>
+    <span id="todayDate"></span>
+</div>
 <div id="todayList"></div>
 
-<h2>🌙 明日でいいこと</h2>
+<div class="section-header">
+    <span>🌙 明日でいいこと</span>
+    <span id="tomorrowDate"></span>
+</div>
 <div id="tomorrowList"></div>
 
 <h2>📦 いつかやること</h2>
@@ -424,6 +463,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
+
+const today = new Date();
+
+document.getElementById("todayDate").textContent =
+    today.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+    });
+
+const tomorrow = new Date();
+tomorrow.setDate(today.getDate() + 1);
+
+document.getElementById("tomorrowDate").textContent =
+    tomorrow.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+    });
+
+
 
 function emptyTask() {
     return `
