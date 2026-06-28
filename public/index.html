@@ -110,24 +110,30 @@ h2 {
     top: 0;
     right: 0;
 
-    width: 180px;
     height: 100%;
+    width: 190px;
 
-    display: flex;
-    justify-content: flex-end;
+    display: none;
     align-items: center;
+    justify-content: flex-end;
     gap: 4px;
 
     padding-right: 6px;
 
-    z-index: 1;
+    background: rgba(244, 241, 232, 0.96);
+
+    z-index: 5;
 }
 
+.swipe-wrapper.open .swipe-actions {
+    display: flex;
+}
+
+/* =========================
 .task-card.swiped-left {
     transform: translateX(-180px);
 }
 
-/* =========================
 .task-buttons {
     display: none;
     align-items: center;
@@ -445,11 +451,11 @@ window.initSwipe = function () {
                 return;
             }
             
-            document.querySelectorAll(".task-card").forEach((item) => {
-		        if (item !== card) {
-            	item.classList.remove("swiped-left");
-		        }
-		    });
+            document.querySelectorAll(".swipe-wrapper").forEach((item) => {
+			    if (item !== card.closest(".swipe-wrapper")) {
+			        item.classList.remove("open");
+			    }
+			});
 
             startX = event.touches[0].clientX;
             startY = event.touches[0].clientY;
@@ -512,7 +518,7 @@ window.initSwipe = function () {
                 document.querySelectorAll(".task-card").forEach((item) => {
                     item.classList.remove("swiped-left");
                 });
-                card.classList.add("swiped-left");
+                card.closest(".swipe-wrapper").classList.add("open");
 
             }
 			
@@ -521,11 +527,13 @@ window.initSwipe = function () {
 
                 // console.log("right swipe detected");
                 
-                if (card.classList.contains("swiped-left")) {
-        			card.classList.remove("swiped-left");
-			        startX = 0;
-			        return;
-			    }
+                const wrapper = card.closest(".swipe-wrapper");
+
+				if (wrapper.classList.contains("open")) {
+				    wrapper.classList.remove("open");
+				    startX = 0;
+				    return;
+				}
                 const taskId = card.dataset.id;
                 const completed = card.dataset.completed === "true";
 
@@ -541,9 +549,9 @@ window.initSwipe = function () {
 };
 
 window.closeAllSwipe = function () {
-    document.querySelectorAll(".task-card").forEach((card) => {
-        card.classList.remove("swiped-left");
-    });
+    document.querySelectorAll(".swipe-wrapper").forEach((wrapper) => {
+	    item.classList.remove("open");
+	});
 };
 
 window.addTask = async function () {
