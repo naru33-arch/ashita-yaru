@@ -1,0 +1,11 @@
+{
+  "name": "明日できることは明日やる",
+  "short_name": "明日やる",
+  "icons": [
+    {
+      "src": "app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

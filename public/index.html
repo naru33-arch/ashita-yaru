@@ -4,6 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.json">
 <title>明日できることは明日やる</title>
 
 <style>
@@ -37,6 +39,12 @@ h2 {
 
 .hidden {
     display: none;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding-bottom: 120px;
 }
 
 /* =========================
@@ -102,7 +110,7 @@ h2 {
     top: 0;
     right: 0;
 
-    width: 210px;
+    width: 180px;
     height: 100%;
 
     display: flex;
@@ -116,7 +124,7 @@ h2 {
 }
 
 .task-card.swiped-left {
-    transform: translateX(-210px);
+    transform: translateX(-180px);
 }
 
 /* =========================
@@ -197,6 +205,8 @@ h2 {
     cursor: pointer;
 
     box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+    
+    z-index: 900;
 }
 
 .task-form {
@@ -263,14 +273,22 @@ h2 {
    7. MOBILE
 ========================= */
 /* PC hover */
-/* =========================
 @media (hover: hover) and (pointer: fine) {
-    .task-card:hover .task-buttons {
+    .swipe-wrapper:hover .task-card {
+        transform: translateX(-180px);
+    }
+
+    .swipe-wrapper:hover .swipe-actions {
         display: flex !important;
         opacity: 1 !important;
     }
+}}
+
+@media (hover: none) and (pointer: coarse) {
+    .completed-mark {
+        display: none;
+    }
 }
-========================= */
 
 /* Mobile */
 @media (max-width: 768px) {
@@ -295,9 +313,6 @@ h2 {
         touch-action: pan-y;
     }
 
-    .completed-mark {
-        display: none;
-    }
 }
 
 @media (max-width: 768px) {
@@ -367,7 +382,6 @@ h2 {
 
 <h2>🌙 明日でいいこと</h2>
 <div id="tomorrowList"></div>
-
 
 <h2>📦 いつかやること</h2>
 <div id="somedayList"></div>
@@ -442,28 +456,36 @@ window.initSwipe = function () {
 
         });
 
+		/* 右スワイプ演出、一旦撤退
 		card.addEventListener("touchmove", (e) => {
+
+		    const strikeLine =
+		        card.querySelector(".strike-line");
 
 		    let currentX = e.touches[0].clientX;
 		    let diffX = currentX - startX;
 
-		    // 左スワイプだけ
-		    if (diffX < 0) {
+		    // 右スワイプだけ
+		    if (diffX > 0) {
 
-		        // 最大160pxまで
-		        let moveX = Math.max(diffX, -220);
+		        // 最大100%
+		        let progress = Math.min(diffX, 100);
 
-		        //card.style.transform =
-		        //    `translateX(${moveX}px)`;
+		        strikeLine.style.width =
+		            progress + "%";
 		    }
-
 		});
-
+		右スワイプ演出、一旦撤退 */
+		
         card.addEventListener("touchend", function (event) {
 			// console.log("touchend fired");
             if (!startX) {
                 return;
             }
+            
+             //右スワイ一旦撤退
+             //const strikeLine =
+		     //   card.querySelector(".strike-line");
 
             const endX = event.changedTouches[0].clientX;
             const endY = event.changedTouches[0].clientY;
@@ -504,13 +526,15 @@ window.initSwipe = function () {
 			        startX = 0;
 			        return;
 			    }
-                
                 const taskId = card.dataset.id;
                 const completed = card.dataset.completed === "true";
 
                 toggleComplete(taskId, completed);
-            }
-
+            
+            	//if (diffX > 0 && diffX < 60) {
+        		//	strikeLine.style.width = "0%";
+            	//}
+			}
             startX = 0;
         });
     });
@@ -669,37 +693,34 @@ window.loadTasks = async function () {
 
 			const html = `
 			    <div class="swipe-wrapper">
-
 			        <div
 			            class="task-card"
 			            data-id="${docSnap.id}"
 			            data-completed="${task.completed}"
 			        >
-
-			            <span
-			                class="task-text"
-			                style="
-			                    cursor:default;
-			                    flex:1;
-			                    user-select:none;
-			                    ${titleStyle}
-			                "
-			                onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
-			            >
-			                <span class="completed-mark">${completedMark}</span>
-			                ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
-			            </span>
-
-			            <span class="drag-handle">☰</span>
-
-			        </div>
-
-			        <div class="swipe-actions">
-			            ${moveButtons}
-			        </div>
-
-			    </div>
-			`;			
+		            <span
+		                class="task-text"
+		                style="
+		                    cursor:default;
+		                    flex:1;
+		                    user-select:none;
+		                    ${titleStyle}
+		                "
+		                onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
+			        >
+		            <span class="task-label">
+				            <span class="completed-mark">${completedMark}</span>
+				            ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
+				    </span>
+		        </span>
+	            <span class="drag-handle">☰</span>
+			        
+				</div>
+	        	<div class="swipe-actions">
+	            	${moveButtons}
+	        	</div>
+	    	</div>
+		`;			
             if (task.bucket === "today") {
                 if (task.completed) {
                     todayDone += html;
@@ -748,7 +769,10 @@ window.loadTasks = async function () {
 		initSwipe();
 
     } catch (error) {
-        console.error(error);
+        console.error("UI初期化エラー:", error);
+        todayList.innerHTML = emptyTask();
+	    tomorrowList.innerHTML = emptyTask();
+    	somedayList.innerHTML = emptyTask();
         document.getElementById("status").innerHTML =
             "❌ 読み込みエラー<br>" + error.message;
     }
@@ -963,7 +987,7 @@ window.initSortable = function () {
                         "↕️ 並び順を保存しました";
 
                 } catch (error) {
-                    console.error(error);
+                    console.error("UI初期化エラー:", error);
                     document.getElementById("status").innerHTML =
                         "❌ 並び替え保存エラー<br>" + error.message;
                 }
