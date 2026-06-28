@@ -1,0 +1,4 @@
+git status
+git add .
+git commit -m "feat: iphone swipe ui completed、ファビコン、アイコン"
+git push
