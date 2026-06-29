@@ -428,7 +428,10 @@ h2 {
 </div>
 <div id="tomorrowList"></div>
 
-<h2>📦 いつかやること</h2>
+<div class="section-header">
+	<span>📦 いつかやること</span>
+    <span id="tomorrowDate">someday...</span>
+</div>
 <div id="somedayList"></div>
 
 </div>
@@ -610,7 +613,7 @@ window.initSwipe = function () {
 
 window.closeAllSwipe = function () {
     document.querySelectorAll(".swipe-wrapper").forEach((wrapper) => {
-	    item.classList.remove("open");
+	    wrapper.classList.remove("open");
 	});
 };
 
