@@ -19,6 +19,25 @@ body {
     padding: 20px;
 }
 
+input,
+textarea,
+select {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+.task-card,
+.task-text,
+.task-label,
+.drag-handle {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
 h1 {
     font-size: 22px;
     text-align: center;
@@ -313,10 +332,6 @@ h2 {
 ========================= */
 /* PC hover */
 @media (hover: hover) and (pointer: fine) {
-    .swipe-wrapper:hover .task-card {
-        transform: translateX(-180px);
-    }
-
     .swipe-wrapper:hover .swipe-actions {
         display: flex !important;
         opacity: 1 !important;
