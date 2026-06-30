@@ -793,7 +793,12 @@ window.loadTasks = async function () {
 		                onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
 			        >
 		            <span class="task-label">
-				            <span class="completed-mark">${completedMark}</span>
+				            <span
+							    class="completed-mark"
+							    onclick="event.stopPropagation(); toggleComplete('${docSnap.id}', ${task.completed})"
+							>
+							    ${completedMark}
+							</span>
 				            ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
 				    </span>
 		        </span>
