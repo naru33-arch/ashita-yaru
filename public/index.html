@@ -177,6 +177,22 @@ h2 {
     opacity: 1;
 }
 
+.refresh-btn {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: #b8b2a5;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+    z-index: 100;
+}
+
 /* =========================
 .task-card.swiped-left {
     transform: translateX(-180px);
@@ -214,6 +230,10 @@ h2 {
 
 .swipe-wrapper.open .drag-handle {
     opacity: 0;
+}
+
+.refresh-btn:active {
+    transform: scale(0.95);
 }
 
 /* =========================
@@ -419,9 +439,8 @@ h2 {
 	</div>
 </div>
 
-<button class="fab" onclick="openTaskForm()">
-    ＋
-</button>
+<button class="fab" onclick="openTaskForm()">＋</button>
+<button class="refresh-btn" onclick="manualReload()">↻</button>
 
 <div
     id="overlay"
@@ -1100,6 +1119,13 @@ window.closeTaskForm = function () {
     document.getElementById("taskForm").classList.add("hidden");
     document.getElementById("overlay").classList.add("hidden");
     document.querySelector(".fab").style.display = "block";
+};
+
+window.manualReload = async function () {
+    document.getElementById("status").innerHTML =
+        "🔄 再読み込み中...";
+    await loadTasks();
+    document.getElementById("status").innerHTML = "";
 };
 
 </script>
