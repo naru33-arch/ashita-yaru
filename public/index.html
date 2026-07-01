@@ -520,14 +520,22 @@ document.getElementById("tomorrowDate").textContent =
         year: "numeric"
     });
 
-
-
 function emptyTask() {
     return `
         <div class="task-card empty-task">
             ☐
         </div>
     `;
+}
+
+async function dayRollover() {
+	const today = new Date();
+
+	const yyyy = today.getFullYear();
+	const mm = String(today.getMonth() + 1).padStart(2, "0");
+	const dd = String(today.getDate()).padStart(2, "0");
+
+	alert(`今日の日付は\n${yyyy}/${mm}/${dd}\n今日も無理せずいきましょう。`);
 }
 
 window.initSwipe = function () {
@@ -1104,8 +1112,9 @@ window.initSortable = function () {
     });
 };
 
-window.addEventListener("load", function () {
-    loadTasks();
+window.addEventListener("load", async function () {
+    await dayRollover();
+    await loadTasks();
 });
 
 window.openTaskForm = function () {
