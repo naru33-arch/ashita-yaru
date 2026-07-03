@@ -481,8 +481,8 @@ import {
     getDocs,
 	query,
 	orderBy,
-	doc,
     updateDoc,
+	doc,
     deleteDoc,
     increment,
     serverTimestamp
@@ -528,14 +528,67 @@ function emptyTask() {
     `;
 }
 
+function getDateKey(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
 async function dayRollover() {
-	const today = new Date();
+    alert("dayRollover start");
 
-	const yyyy = today.getFullYear();
-	const mm = String(today.getMonth() + 1).padStart(2, "0");
-	const dd = String(today.getDate()).padStart(2, "0");
+    try {
+        const todayKey = getDateKey(new Date());
+        alert("todayKey = " + todayKey);
 
-	alert(`今日の日付は\n${yyyy}/${mm}/${dd}\n今日も無理せずいきましょう。`);
+        const q = query(
+            collection(db, "tasks"),
+            orderBy("createdAt", "desc")
+        );
+
+        const snapshot = await getDocs(q);
+        alert("snapshot size = " + snapshot.size);
+
+        const updates = [];
+
+        snapshot.forEach((docSnap) => {
+            const task = docSnap.data();
+
+            alert(
+                "check: " +
+                task.title + " / " +
+                task.bucket + " / " +
+                task.taskDate + " / " +
+                todayKey
+            );
+
+            if (
+                task.bucket === "tomorrow" &&
+                task.taskDate &&
+                task.taskDate <= todayKey
+            ) {
+                alert("移動対象見つけた");
+
+                updates.push(
+                    updateDoc(doc(db, "tasks", docSnap.id), {
+                        bucket: "today",
+                        taskDate: todayKey,
+                        updatedAt: serverTimestamp(),
+                        lastMovedAt: serverTimestamp()
+                    })
+                );
+            }
+        });
+
+        await Promise.all(updates);
+
+        alert("rollover done: " + updates.length + "件");
+
+    } catch (error) {
+        alert("dayRollover エラー: " + error.message);
+        console.error(error);
+    }
 }
 
 window.initSwipe = function () {
@@ -685,6 +738,7 @@ window.addTask = async function () {
                 importance: importance,
                 motivation: motivation,
                 bucket: "today",
+                taskDate: getDateKey(new Date()),
                 completed: false,
                 tomorrowCount: 0,
                 somedayCount: 0,
@@ -735,6 +789,9 @@ window.loadTasks = async function () {
         snapshot.forEach((docSnap) => {
 
             const task = docSnap.data();
+            if (task.hidden === true) {
+     		   return;
+    		}
             const completedMark = task.completed ? "☑" : "☐";
             let titleStyle = "";
 			if (task.completed) {
@@ -1113,7 +1170,11 @@ window.initSortable = function () {
 };
 
 window.addEventListener("load", async function () {
-    await dayRollover();
+    try {
+        await dayRollover();
+    } catch (error) {
+        console.error("dayRollover エラー:", error);
+    }
     await loadTasks();
 });
 

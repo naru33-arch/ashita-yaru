@@ -1,4 +1,4 @@
 git status
 git add .
-git commit -m "feat: iphone swipe ui completed、ファビコン、アイコン"
+git commit -m "feat: 日付送り準備1"
 git push
