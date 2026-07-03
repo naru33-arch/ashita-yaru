@@ -536,59 +536,60 @@ function getDateKey(date) {
 }
 
 async function dayRollover() {
-    alert("dayRollover start");
+    const todayKey = getDateKey(new Date());
 
-    try {
-        const todayKey = getDateKey(new Date());
-        alert("todayKey = " + todayKey);
+    console.log("rollover start", todayKey);
 
-        const q = query(
-            collection(db, "tasks"),
-            orderBy("createdAt", "desc")
-        );
+    const q = query(
+        collection(db, "tasks"),
+        orderBy("createdAt", "desc")
+    );
 
-        const snapshot = await getDocs(q);
-        alert("snapshot size = " + snapshot.size);
+    const snapshot = await getDocs(q);
 
-        const updates = [];
+    const updates = [];
 
-        snapshot.forEach((docSnap) => {
-            const task = docSnap.data();
+    snapshot.forEach((docSnap) => {
+        const task = docSnap.data();
 
-            alert(
-                "check: " +
-                task.title + " / " +
-                task.bucket + " / " +
-                task.taskDate + " / " +
-                todayKey
+        // taskDate がない古いタスクは対象外
+        if (!task.taskDate) {
+            return;
+        }
+
+        // tomorrow → today
+        if (
+            task.bucket === "tomorrow" &&
+            task.taskDate <= todayKey
+        ) {
+            updates.push(
+                updateDoc(doc(db, "tasks", docSnap.id), {
+                    bucket: "today",
+                    taskDate: todayKey,
+                    updatedAt: serverTimestamp(),
+                    lastMovedAt: serverTimestamp()
+                })
             );
+        }
 
-            if (
-                task.bucket === "tomorrow" &&
-                task.taskDate &&
-                task.taskDate <= todayKey
-            ) {
-                alert("移動対象見つけた");
+        // 前日以前に完了した today タスクを非表示
+        if (
+            task.bucket === "today" &&
+            task.completed === true &&
+            task.taskDate < todayKey
+        ) {
+            updates.push(
+                updateDoc(doc(db, "tasks", docSnap.id), {
+                    hidden: true,
+                    updatedAt: serverTimestamp()
+                })
+            );
+        }
+    });
 
-                updates.push(
-                    updateDoc(doc(db, "tasks", docSnap.id), {
-                        bucket: "today",
-                        taskDate: todayKey,
-                        updatedAt: serverTimestamp(),
-                        lastMovedAt: serverTimestamp()
-                    })
-                );
-            }
-        });
+    await Promise.all(updates);
 
-        await Promise.all(updates);
-
-        alert("rollover done: " + updates.length + "件");
-
-    } catch (error) {
-        alert("dayRollover エラー: " + error.message);
-        console.error(error);
-    }
+    console.log(`rollover done: ${updates.length}件更新`);
 }
 
 window.initSwipe = function () {
