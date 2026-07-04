@@ -535,6 +535,12 @@ function getDateKey(date) {
     return `${y}-${m}-${d}`;
 }
 
+function getTomorrowKey() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return getDateKey(d);
+}
+
 async function dayRollover() {
     const todayKey = getDateKey(new Date());
 
@@ -985,25 +991,21 @@ window.handleTaskClick = function (taskId, completed) {
 };
 
 window.moveToTomorrow = async function (taskId) {
-
     try {
-
         await updateDoc(
             doc(db, "tasks", taskId),
             {
                 bucket: "tomorrow",
+                taskDate: getTomorrowKey(),
                 tomorrowCount: increment(1),
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
+                lastMovedAt: serverTimestamp()
             }
         );
-
         closeAllSwipe();
         loadTasks();
-
     } catch (error) {
-
         console.error(error);
-
         document.getElementById("status").innerHTML =
             "❌ 移動エラー<br>" + error.message;
     }
