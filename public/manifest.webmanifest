@@ -1,0 +1,20 @@
+{
+  "name": "明日できることは明日やる",
+  "short_name": "明日やる",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5efe0",
+  "theme_color": "#8b6f47",
+  "icons": [
+    {
+      "src": "/app_icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
