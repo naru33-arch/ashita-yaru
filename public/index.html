@@ -101,6 +101,71 @@ h2 {
     user-select: none;
 }
 
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3efe6;
+  padding: 24px;
+}
+
+.login-card {
+  background: #fffdf7;
+  border: 1px solid #d8cbb6;
+  border-radius: 18px;
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.login-card h1 {
+  margin-top: 0;
+  font-size: 1.5rem;
+}
+
+.login-card p {
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.login-button,
+.logout-button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-button {
+  background: #333;
+  color: #fff;
+  width: 100%;
+}
+
+.logout-button {
+  background: #eee;
+  color: #333;
+}
+
+.user-area {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+#appScreen {
+  display: none;
+}
+
+
+
 /* =========================
    2. LAYOUT
 ========================= */
@@ -432,9 +497,23 @@ h2 {
 
 <body>
 
-<div class="container">
+<!-- 認証画面 -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1>明日できることは明日やる</h1>
+    <p>Googleアカウントでログインしてください。</p>
+    <button id="loginButton" class="login-button">Googleでログイン</button>
+  </div>
+</div>
+
+<div  id="appScreen" class="container">
 
 <!-- <h1>📖 明日できることは明日やる</h1> -->
+<!-- ログアウトボタン -->
+<div class="user-area">
+  <span id="userInfo"></span>
+  <button id="logoutButton" class="logout-button">ログアウト</button>
+</div>
 
 <div id="status" style="display:none;"></div>
 
@@ -517,6 +596,14 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyADTLt3GU2IrdqlzhLxRnZxf_XAbnJp6x4",
   authDomain: "ashita-yaru.firebaseapp.com",
@@ -527,8 +614,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
+
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
 
 const today = new Date();
 
@@ -548,6 +639,48 @@ document.getElementById("tomorrowDate").textContent =
         day: "numeric",
         year: "numeric"
     });
+
+const loginScreen = document.getElementById("loginScreen");
+const appScreen = document.getElementById("appScreen");
+const loginButton = document.getElementById("loginButton");
+const logoutButton = document.getElementById("logoutButton");
+const userInfo = document.getElementById("userInfo");
+
+loginButton.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("ログインエラー:", error);
+    alert("ログインに失敗しました。もう一度お試しください。");
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("ログアウトエラー:", error);
+    alert("ログアウトに失敗しました。");
+  }
+});
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+
+  if (user) {
+    loginScreen.style.display = "none";
+    appScreen.style.display = "block";
+
+    userInfo.textContent = `${user.displayName || user.email} でログイン中`;
+
+    // 既存のタスク読込処理
+    loadTasks();
+  } else {
+    loginScreen.style.display = "flex";
+    appScreen.style.display = "none";
+    userInfo.textContent = "";
+  }
+});
 
 function emptyTask() {
     return `
@@ -1210,7 +1343,7 @@ window.addEventListener("load", async function () {
     } catch (error) {
         console.error("dayRollover エラー:", error);
     }
-    await loadTasks();
+    // await loadTasks();
 });
 
 window.openTaskForm = function () {
