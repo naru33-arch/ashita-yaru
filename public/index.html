@@ -439,7 +439,7 @@ h2 {
 <div id="status" style="display:none;"></div>
 
 <div id="taskForm" class="task-form hidden">
-
+	<h2 id="taskFormTitle">➕ タスク追加</h2>
     <input
         id="taskTitle"
         type="text"
@@ -461,7 +461,7 @@ h2 {
 	    </select>
 	</div>
 	<div class="form-actions">
-    	<button onclick="addTask()">追加</button>
+    	<button id="saveTaskButton" onclick="addTask()">追加</button>
     	<button onclick="closeTaskForm()">閉じる</button>
 	</div>
 </div>
@@ -498,8 +498,10 @@ h2 {
 </div>
 
 <script type="module">
-const APP_VERSION = "v0.9.0";
+const APP_VERSION = "v0.9.1";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+let editingTaskId = null;
 
 import {
     getFirestore,
@@ -749,49 +751,75 @@ window.closeAllSwipe = function () {
 window.addTask = async function () {
 
     const title = document.getElementById("taskTitle").value.trim();
-    const importance =
-    Number(
+
+    const importance = Number(
         document.getElementById("importance").value
-    	);
-	const motivation =
-    	Number(
-        	document.getElementById("motivation").value
-    	);
+    );
+
+    const motivation = Number(
+        document.getElementById("motivation").value
+    );
+
     if (!title) {
         alert("タイトルを入力してください");
         return;
     }
 
     try {
-        await addDoc(
-            collection(db, "tasks"),
-            {
-                title: title,
-                detail: "",
-                dueDate: null,
-                importance: importance,
-                motivation: motivation,
-                bucket: "today",
-                taskDate: getDateKey(new Date()),
-                completed: false,
-                tomorrowCount: 0,
-                somedayCount: 0,
-                sortOrder: Date.now(),
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                completedAt: null,
-                lastMovedAt: serverTimestamp()
-            }
-        );
+        if (editingTaskId) {
+            await updateDoc(
+                doc(db, "tasks", editingTaskId),
+                {
+                    title: title,
+                    importance: importance,
+                    motivation: motivation,
+                    updatedAt: serverTimestamp()
+                }
+            );
 
+            document.getElementById("status").innerHTML = "✏️ 更新しました";
+
+        } else {
+            await addDoc(
+                collection(db, "tasks"),
+                {
+                    title: title,
+                    detail: "",
+                    dueDate: null,
+                    importance: importance,
+                    motivation: motivation,
+                    bucket: "today",
+                    taskDate: getDateKey(new Date()),
+                    completed: false,
+                    tomorrowCount: 0,
+                    somedayCount: 0,
+                    sortOrder: Date.now(),
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    completedAt: null,
+                    lastMovedAt: serverTimestamp()
+                }
+            );
+
+            document.getElementById("status").innerHTML = "✅ 追加しました";
+        }
+
+        editingTaskId = null;
         document.getElementById("taskTitle").value = "";
-		closeTaskForm();
-        document.getElementById("status").innerHTML = "✅ 追加しました";
+        document.getElementById("importance").value = "2";
+        document.getElementById("motivation").value = "3";
+
+		document.getElementById("taskFormTitle").textContent = "➕ タスク追加";
+		document.getElementById("saveTaskButton").textContent = "追加";
+
+        closeTaskForm();
+        closeAllSwipe();
         loadTasks();
 
     } catch (error) {
         console.error(error);
-        document.getElementById("status").innerHTML = "❌ エラー<br>" + error.message;
+        document.getElementById("status").innerHTML =
+            "❌ エラー<br>" + error.message;
     }
 };
 
@@ -872,7 +900,7 @@ window.loadTasks = async function () {
 
             if (task.bucket === "today") {
 		    moveButtons = `
-		        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}')">✏️</button>
+		        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
 
 		        <button onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">🌙</button>
 
@@ -882,7 +910,7 @@ window.loadTasks = async function () {
 		    `;
 			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
 			    moveButtons = `
-			        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}')">✏️</button>
+			        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
 			        <button onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">↩️</button>
 			        <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
 			    `;
@@ -1116,42 +1144,18 @@ window.deleteTask = async function (taskId) {
     }
 };
 
-window.editTask = async function (taskId, currentTitle) {
+window.editTask = async function (taskId, currentTitle, importance, motivation) {
+    editingTaskId = taskId;
 
-    const newTitle = prompt("タスク名を編集", currentTitle);
+    document.getElementById("taskTitle").value = currentTitle;
+    document.getElementById("importance").value = importance || 2;
+    document.getElementById("motivation").value = motivation || 3;
 
-    if (newTitle === null) {
-        return;
-    }
+	document.getElementById("taskFormTitle").textContent = "✏️ タスク編集";
+	document.getElementById("saveTaskButton").textContent = "保存";
 
-    const title = newTitle.trim();
-
-    if (!title) {
-        alert("タイトルは空にできません");
-        return;
-    }
-
-    try {
-        await updateDoc(
-            doc(db, "tasks", taskId),
-            {
-                title: title,
-                updatedAt: serverTimestamp()
-            }
-        );
-
-        document.getElementById("status").innerHTML =
-            "✏️ 更新しました";
-
-        closeAllSwipe();
-        loadTasks();
-
-    } catch (error) {
-        console.error(error);
-
-        document.getElementById("status").innerHTML =
-            "❌ 更新エラー<br>" + error.message;
-    }
+    closeAllSwipe();
+    openTaskForm();
 };
 
 window.initSortable = function () {
@@ -1220,6 +1224,17 @@ window.closeTaskForm = function () {
     document.getElementById("taskForm").classList.add("hidden");
     document.getElementById("overlay").classList.add("hidden");
     document.querySelector(".fab").style.display = "block";
+    
+    editingTaskId = null;
+	document.getElementById("saveTaskButton").textContent = "追加";
+	
+	document.getElementById("taskTitle").value = "";
+	document.getElementById("importance").value = "2";
+	document.getElementById("motivation").value = "3";
+
+	document.getElementById("taskFormTitle").textContent = "➕ タスク追加";
+	document.getElementById("saveTaskButton").textContent = "追加";
+
 };
 
 window.manualReload = async function () {
