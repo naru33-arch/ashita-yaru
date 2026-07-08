@@ -754,29 +754,35 @@ document.addEventListener("click", () => {
     userMenu.classList.remove("show");
 });
 
-onAuthStateChanged(auth, (user) => {
-  currentUser = user;
+onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
 
-  if (user) {
-    loginScreen.style.display = "none";
-    appScreen.style.display = "block";
+    if (user) {
+        loginScreen.style.display = "none";
+        appScreen.style.display = "block";
 
-    userIcon.src = user.photoURL || "";
-    userName.textContent = user.displayName || "ユーザー";
-    userEmail.textContent = user.email || "";
-    userMenu.classList.remove("show");
-    
-    // 既存のタスク読込処理
-    loadTasks();
-  } else {
-    loginScreen.style.display = "flex";
-    appScreen.style.display = "none";
+        userIcon.src = user.photoURL || "";
+        userName.textContent = user.displayName || "ユーザー";
+        userEmail.textContent = user.email || "";
+        userMenu.classList.remove("show");
 
-    userIcon.src = "";
-    userName.textContent = "";
-    userEmail.textContent = "";
-    userMenu.classList.remove("show");
-  }
+        try {
+            await dayRollover();
+        } catch (error) {
+            console.error("dayRollover エラー:", error);
+        }
+
+        await loadTasks();
+
+    } else {
+        loginScreen.style.display = "flex";
+        appScreen.style.display = "none";
+
+        userIcon.src = "";
+        userName.textContent = "";
+        userEmail.textContent = "";
+        userMenu.classList.remove("show");
+    }
 });
 
 function emptyTask() {
@@ -801,13 +807,18 @@ function getTomorrowKey() {
 }
 
 async function dayRollover() {
+    if (!currentUser) {
+        console.log("rollover skipped: currentUserなし");
+        return;
+    }
+
     const todayKey = getDateKey(new Date());
 
-    console.log("rollover start", todayKey);
+    console.log("rollover start", todayKey, currentUser.uid);
 
     const q = query(
         collection(db, "tasks"),
-        orderBy("createdAt", "desc")
+        where("uid", "==", currentUser.uid)
     );
 
     const snapshot = await getDocs(q);
@@ -819,6 +830,11 @@ async function dayRollover() {
 
         // taskDate がない古いタスクは対象外
         if (!task.taskDate) {
+            return;
+        }
+
+        // すでに非表示のタスクは対象外
+        if (task.hidden === true) {
             return;
         }
 
@@ -1478,14 +1494,8 @@ window.initSortable = function () {
     });
 };
 
-window.addEventListener("load", async function () {
+window.addEventListener("load", function () {
     document.getElementById("version").textContent = APP_VERSION;
-    try {
-        await dayRollover();
-    } catch (error) {
-        console.error("dayRollover エラー:", error);
-    }
-    // await loadTasks();
 });
 
 window.openTaskForm = function () {
