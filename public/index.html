@@ -593,7 +593,8 @@ import {
 	doc,
     deleteDoc,
     increment,
-    serverTimestamp
+    serverTimestamp,
+    where
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 import {
@@ -883,15 +884,14 @@ window.closeAllSwipe = function () {
 
 window.addTask = async function () {
 
+	if (!currentUser) {
+    	alert("ログインしてください");
+    	return;
+  	}
+
     const title = document.getElementById("taskTitle").value.trim();
-
-    const importance = Number(
-        document.getElementById("importance").value
-    );
-
-    const motivation = Number(
-        document.getElementById("motivation").value
-    );
+    const importance = Number(document.getElementById("importance").value);
+    const motivation = Number(document.getElementById("motivation").value);
 
     if (!title) {
         alert("タイトルを入力してください");
@@ -916,6 +916,7 @@ window.addTask = async function () {
             await addDoc(
                 collection(db, "tasks"),
                 {
+                    uid: currentUser.uid,
                     title: title,
                     detail: "",
                     dueDate: null,
@@ -958,6 +959,13 @@ window.addTask = async function () {
 
 window.loadTasks = async function () {
 
+	console.log("読込時 currentUser:", currentUser);
+	console.log("読込時 uid:", currentUser?.uid);
+
+	if (!currentUser) {
+	  return;
+	}
+
     const todayList = document.getElementById("todayList");
     const tomorrowList = document.getElementById("tomorrowList");
     const somedayList = document.getElementById("somedayList");
@@ -976,10 +984,13 @@ window.loadTasks = async function () {
     try {
         const q = query(
             collection(db, "tasks"),
+            where("uid", "==", currentUser.uid),
             orderBy("createdAt", "desc")
         );
 
         const snapshot = await getDocs(q);
+        
+        console.log("取得件数:", snapshot.size);
 
         snapshot.forEach((docSnap) => {
 
@@ -1034,11 +1045,8 @@ window.loadTasks = async function () {
             if (task.bucket === "today") {
 		    moveButtons = `
 		        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
-
 		        <button onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">🌙</button>
-
 		        <button onclick="event.stopPropagation(); moveToSomeday('${docSnap.id}')">📦</button>
-
 		        <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
 		    `;
 			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
@@ -1148,6 +1156,11 @@ window.loadTasks = async function () {
 
 window.toggleComplete = async function (taskId, completed) {
 
+	if (!currentUser) {
+	  alert("ログインしてください");
+	  return;
+	}
+
     try {
         await updateDoc(
             doc(db, "tasks", taskId),
@@ -1179,6 +1192,12 @@ window.handleTaskClick = function (taskId, completed) {
 };
 
 window.moveToTomorrow = async function (taskId) {
+
+	if (!currentUser) {
+	  alert("ログインしてください");
+	  return;
+	}
+
     try {
         await updateDoc(
             doc(db, "tasks", taskId),
@@ -1200,6 +1219,11 @@ window.moveToTomorrow = async function (taskId) {
 };
 
 window.moveToSomeday = async function (taskId) {
+
+	if (!currentUser) {
+	  alert("ログインしてください");
+	  return;
+	}
 
     try {
 
@@ -1228,6 +1252,11 @@ window.moveToSomeday = async function (taskId) {
 
 window.moveToToday = async function (taskId) {
 
+	if (!currentUser) {
+	  alert("ログインしてください");
+	  return;
+	}
+
     try {
 
         await updateDoc(
@@ -1251,6 +1280,11 @@ window.moveToToday = async function (taskId) {
 };
 
 window.deleteTask = async function (taskId) {
+
+	if (!currentUser) {
+	  alert("ログインしてください");
+	  return;
+	}
 
     const ok = confirm("このタスクを削除しますか？");
 
@@ -1371,6 +1405,12 @@ window.closeTaskForm = function () {
 };
 
 window.manualReload = async function () {
+
+	if (!currentUser) {
+	  alert("ログインしてください");
+	  return;
+	}
+
     document.getElementById("status").innerHTML =
         "🔄 再読み込み中...";
     await loadTasks();
