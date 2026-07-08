@@ -959,20 +959,33 @@ window.addTask = async function () {
 
 window.loadTasks = async function () {
 
-	console.log("読込時 currentUser:", currentUser);
-	console.log("読込時 uid:", currentUser?.uid);
-
-	if (!currentUser) {
-	  return;
-	}
+    console.log("読込時 currentUser:", currentUser);
+    console.log("読込時 uid:", currentUser?.uid);
 
     const todayList = document.getElementById("todayList");
     const tomorrowList = document.getElementById("tomorrowList");
     const somedayList = document.getElementById("somedayList");
+    const status = document.getElementById("status");
+
+    if (!todayList || !tomorrowList || !somedayList) {
+        console.error("タスクリスト要素が見つかりません");
+        return;
+    }
 
     todayList.innerHTML = "読み込み中...";
     tomorrowList.innerHTML = "読み込み中...";
     somedayList.innerHTML = "読み込み中...";
+
+    if (status) {
+        status.innerHTML = "";
+    }
+
+    if (!currentUser) {
+        todayList.innerHTML = emptyTask();
+        tomorrowList.innerHTML = emptyTask();
+        somedayList.innerHTML = emptyTask();
+        return;
+    }
 
     let todayTodo = "";
     let todayDone = "";
@@ -989,114 +1002,108 @@ window.loadTasks = async function () {
         );
 
         const snapshot = await getDocs(q);
-        
+
         console.log("取得件数:", snapshot.size);
 
         snapshot.forEach((docSnap) => {
 
             const task = docSnap.data();
+
             if (task.hidden === true) {
-     		   return;
-    		}
+                return;
+            }
+
             const completedMark = task.completed ? "☑" : "☐";
+
             let titleStyle = "";
-			if (task.completed) {
-			    titleStyle =
-        			"text-decoration: line-through; opacity: 0.25;filter: grayscale(100%);";
-			}
+            if (task.completed) {
+                titleStyle =
+                    "text-decoration: line-through; opacity: 0.25; filter: grayscale(100%);";
+            }
 
-			let importanceEmoji = "🟡";
+            let importanceEmoji = "🟡";
 
-			if (task.importance === 3) {
-			    importanceEmoji = "🔴";
-			}
+            if (task.importance === 3) {
+                importanceEmoji = "🔴";
+            } else if (task.importance === 2) {
+                importanceEmoji = "🟡";
+            } else {
+                importanceEmoji = "⚪️";
+            }
 
-			else if (task.importance === 2) {
-			    importanceEmoji = "🟡";
-			}
-			else {
-			    importanceEmoji = "⚪";
-			}
+            let motivationEmoji = "😐";
 
-			let motivationEmoji = "😐";
-
-			if (task.motivation === 5) {
-			    motivationEmoji = "🚀";
-			}
-
-			else if (task.motivation === 4) {
-			    motivationEmoji = "🙂";
-			}
-
-			else if (task.motivation === 3) {
-			    motivationEmoji = "😐";
-			}
-
-			else if (task.motivation === 2) {
-			    motivationEmoji = "🥱";
-			}
-
-			else {
-			    motivationEmoji = "💀";
-			}
+            if (task.motivation === 5) {
+                motivationEmoji = "🚀";
+            } else if (task.motivation === 4) {
+                motivationEmoji = "🙂";
+            } else if (task.motivation === 3) {
+                motivationEmoji = "😐";
+            } else if (task.motivation === 2) {
+                motivationEmoji = "🥱";
+            } else {
+                motivationEmoji = "💀";
+            }
 
             let moveButtons = "";
 
             if (task.bucket === "today") {
-		    moveButtons = `
-		        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
-		        <button onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">🌙</button>
-		        <button onclick="event.stopPropagation(); moveToSomeday('${docSnap.id}')">📦</button>
-		        <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
-		    `;
-			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
-			    moveButtons = `
-			        <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
-			        <button onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">↩️</button>
-			        <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
-			    `;
-			}
+                moveButtons = `
+                    <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
+                    <button onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">🌙</button>
+                    <button onclick="event.stopPropagation(); moveToSomeday('${docSnap.id}')">📦</button>
+                    <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
+                `;
+            } else if (task.bucket === "tomorrow" || task.bucket === "someday") {
+                moveButtons = `
+                    <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
+                    <button onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">↩️</button>
+                    <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
+                `;
+            }
 
-			const tomorrowBadge =
-			    task.tomorrowCount && task.tomorrowCount > 0
-			    ? ` 🌙×${task.tomorrowCount}`
-			    : "";
+            const tomorrowBadge =
+                task.tomorrowCount && task.tomorrowCount > 0
+                    ? ` 🌙×${task.tomorrowCount}`
+                    : "";
 
-			const html = `
-			    <div class="swipe-wrapper">
-			        <div
-			            class="task-card"
-			            data-id="${docSnap.id}"
-			            data-completed="${task.completed}"
-			        >
-		            <span
-		                class="task-text"
-		                style="
-		                    cursor:default;
-		                    flex:1;
-		                    user-select:none;
-		                    ${titleStyle}
-		                "
-		                onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
-			        >
-		            <span class="task-label">
-				            <span
-							    class="completed-mark"
-							    onclick="event.stopPropagation(); toggleComplete('${docSnap.id}', ${task.completed})"
-							>
-							    ${completedMark}
-							</span>
-				            ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
-				    </span>
-		        </span>
-	            <span class="drag-handle">☰</span>
-			        
-				</div>
-	        	<div class="swipe-actions">
-	            	${moveButtons}
-	        	</div>
-	    	</div>
-		`;			
+            const html = `
+                <div class="swipe-wrapper">
+                    <div
+                        class="task-card"
+                        data-id="${docSnap.id}"
+                        data-completed="${task.completed}"
+                    >
+                        <span
+                            class="task-text"
+                            style="
+                                cursor:default;
+                                flex:1;
+                                user-select:none;
+                                ${titleStyle}
+                            "
+                            onclick="handleTaskClick('${docSnap.id}', ${task.completed})"
+                        >
+                            <span class="task-label">
+                                <span
+                                    class="completed-mark"
+                                    onclick="event.stopPropagation(); toggleComplete('${docSnap.id}', ${task.completed})"
+                                >
+                                    ${completedMark}
+                                </span>
+                                ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
+                            </span>
+                        </span>
+
+                        <span class="drag-handle">☰</span>
+                    </div>
+
+                    <div class="swipe-actions">
+                        ${moveButtons}
+                    </div>
+                </div>
+            `;
+
             if (task.bucket === "today") {
                 if (task.completed) {
                     todayDone += html;
@@ -1118,39 +1125,44 @@ window.loadTasks = async function () {
             }
         });
 
-		todayList.innerHTML = `
-		    <div class="sortable-list" data-bucket="today">
-		        ${todayTodo || emptyTask()}
-		    </div>
+        todayList.innerHTML = `
+            <div class="sortable-list" data-bucket="today">
+                ${todayTodo || emptyTask()}
+            </div>
 
-		    ${todayDone || emptyTask()}
-		`;
+            ${todayDone || ""}
+        `;
 
-		tomorrowList.innerHTML = `
-		    <div class="sortable-list" data-bucket="tomorrow">
-		        ${tomorrowTodo || emptyTask()}
-		    </div>
+        tomorrowList.innerHTML = `
+            <div class="sortable-list" data-bucket="tomorrow">
+                ${tomorrowTodo || emptyTask()}
+            </div>
 
-		    ${tomorrowDone || emptyTask()}
-		`;
+            ${tomorrowDone || ""}
+        `;
 
-		somedayList.innerHTML = `
-		    <div class="sortable-list" data-bucket="someday">
-		        ${somedayTodo || emptyTask()}
-		    </div>
+        somedayList.innerHTML = `
+            <div class="sortable-list" data-bucket="someday">
+                ${somedayTodo || emptyTask()}
+            </div>
 
-		    ${somedayDone || emptyTask()}
-		`;
-		initSortable();
-		initSwipe();
+            ${somedayDone || ""}
+        `;
+
+        initSortable();
+        initSwipe();
 
     } catch (error) {
         console.error("UI初期化エラー:", error);
-        todayList.innerHTML = emptyTask();
-	    tomorrowList.innerHTML = emptyTask();
-    	somedayList.innerHTML = emptyTask();
-        document.getElementById("status").innerHTML =
-            "❌ 読み込みエラー<br>" + error.message;
+
+        todayList.innerHTML = "読み込みに失敗しました。リロードしてください。";
+        tomorrowList.innerHTML = "";
+        somedayList.innerHTML = "";
+
+        if (status) {
+            status.innerHTML =
+                "❌ 読み込みエラー<br>" + error.message;
+        }
     }
 };
 
