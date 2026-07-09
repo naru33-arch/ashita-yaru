@@ -273,7 +273,7 @@ h2 {
 	
 	transition: transform 0.16s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-}
+
 
 .task-text {
     flex: 1;
@@ -283,6 +283,15 @@ h2 {
 
 .empty-task {
     opacity: 0.35;
+}
+
+.task-text,
+.task-label {
+    line-height: 1.15;
+}
+
+.swipe-wrapper {
+    margin-bottom: 1px;
 }
 
 /* =========================
@@ -379,6 +388,73 @@ h2 {
 
 .refresh-btn:active {
     transform: scale(0.95);
+}
+
+/* いったんコメントアウト
+.swipe-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+*/
+
+.action-button {
+    min-width: 44px;
+    height: 36px;
+    border: none;
+    border-radius: 11px;
+    padding: 3px 5px;
+    cursor: pointer;
+
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+
+.action-icon {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.action-caption {
+    font-size: 0.55rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.action-edit {
+    background: #e8f1ff;
+    color: #223344;
+}
+
+.action-tomorrow {
+    background: #fff1c9;
+    color: #4a3500;
+}
+
+.action-someday {
+    background: #eee7ff;
+    color: #35235f;
+}
+
+.action-today {
+    background: #dff5e5;
+    color: #1f4a2e;
+}
+
+.action-delete {
+    background: #ffe1df;
+    color: #6b1f1a;
+}
+
+.action-button:active {
+    transform: scale(0.96);
 }
 
 /* =========================
@@ -1157,22 +1233,48 @@ window.loadTasks = async function () {
                 motivationEmoji = "💀";
             }
 
-            let moveButtons = "";
+			let moveButtons = "";
 
-            if (task.bucket === "today") {
-                moveButtons = `
-                    <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
-                    <button onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">🌙</button>
-                    <button onclick="event.stopPropagation(); moveToSomeday('${docSnap.id}')">📦</button>
-                    <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
-                `;
-            } else if (task.bucket === "tomorrow" || task.bucket === "someday") {
-                moveButtons = `
-                    <button onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">✏️</button>
-                    <button onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">↩️</button>
-                    <button onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">🗑️</button>
-                `;
-            }
+			if (task.bucket === "today") {
+			    moveButtons = `
+			        <button class="action-button action-edit" onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">
+			            <span class="action-icon">✏️</span>
+			            <span class="action-caption">編集</span>
+			        </button>
+
+			        <button class="action-button action-tomorrow" onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">
+			            <span class="action-icon">🌙</span>
+			            <span class="action-caption">明日</span>
+			        </button>
+
+			        <button class="action-button action-someday" onclick="event.stopPropagation(); moveToSomeday('${docSnap.id}')">
+			            <span class="action-icon">📦</span>
+			            <span class="action-caption">保留</span>
+			        </button>
+
+			        <button class="action-button action-delete" onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">
+			            <span class="action-icon">🗑️</span>
+			            <span class="action-caption">削除</span>
+			        </button>
+			    `;
+			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
+			    moveButtons = `
+			        <button class="action-button action-edit" onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">
+			            <span class="action-icon">✏️</span>
+			            <span class="action-caption">編集</span>
+			        </button>
+
+			        <button class="action-button action-today" onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">
+			            <span class="action-icon">↩️</span>
+			            <span class="action-caption">今日</span>
+			        </button>
+
+			        <button class="action-button action-delete" onclick="event.stopPropagation(); deleteTask('${docSnap.id}')">
+			            <span class="action-icon">🗑️</span>
+			            <span class="action-caption">削除</span>
+			        </button>
+			    `;
+			}
 
             const tomorrowBadge =
                 task.tomorrowCount && task.tomorrowCount > 0
