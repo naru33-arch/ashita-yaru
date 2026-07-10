@@ -724,7 +724,7 @@ h2 {
 </div>
 
 <script type="module">
-const APP_VERSION = "v1.0.0";
+const APP_VERSION = "v1.0.1";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 let editingTaskId = null;
@@ -1145,6 +1145,24 @@ window.addTask = async function () {
     }
 };
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+window.editTaskFromButton = function (button) {
+    const taskId = button.dataset.id;
+    const title = button.dataset.title || "";
+    const importance = Number(button.dataset.importance || 2);
+    const motivation = Number(button.dataset.motivation || 3);
+
+    editTask(taskId, title, importance, motivation);
+};
+
 window.loadTasks = async function () {
 
     console.log("読込時 currentUser:", currentUser);
@@ -1196,6 +1214,8 @@ window.loadTasks = async function () {
         snapshot.forEach((docSnap) => {
 
             const task = docSnap.data();
+            const safeTitle = escapeHtml(task.title);
+			const safeTitleForAttr = escapeHtml(task.title);
 
             if (task.hidden === true) {
                 return;
@@ -1237,11 +1257,17 @@ window.loadTasks = async function () {
 
 			if (task.bucket === "today") {
 			    moveButtons = `
-			        <button class="action-button action-edit" onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">
-			            <span class="action-icon">✏️</span>
-			            <span class="action-caption">編集</span>
-			        </button>
-
+					<button
+					    class="action-button action-edit"
+					    data-id="${docSnap.id}"
+					    data-title="${safeTitleForAttr}"
+					    data-importance="${task.importance || 2}"
+					    data-motivation="${task.motivation || 3}"
+					    onclick="event.stopPropagation(); editTaskFromButton(this)"
+					>
+					    <span class="action-icon">✏️</span>
+					    <span class="action-caption">編集</span>
+					</button>
 			        <button class="action-button action-tomorrow" onclick="event.stopPropagation(); moveToTomorrow('${docSnap.id}')">
 			            <span class="action-icon">🌙</span>
 			            <span class="action-caption">明日</span>
@@ -1259,11 +1285,17 @@ window.loadTasks = async function () {
 			    `;
 			} else if (task.bucket === "tomorrow" || task.bucket === "someday") {
 			    moveButtons = `
-			        <button class="action-button action-edit" onclick="event.stopPropagation(); editTask('${docSnap.id}', '${task.title}', ${task.importance || 2}, ${task.motivation || 3})">
-			            <span class="action-icon">✏️</span>
-			            <span class="action-caption">編集</span>
-			        </button>
-
+					<button
+					    class="action-button action-edit"
+					    data-id="${docSnap.id}"
+					    data-title="${safeTitleForAttr}"
+					    data-importance="${task.importance || 2}"
+					    data-motivation="${task.motivation || 3}"
+					    onclick="event.stopPropagation(); editTaskFromButton(this)"
+					>
+					    <span class="action-icon">✏️</span>
+					    <span class="action-caption">編集</span>
+					</button>
 			        <button class="action-button action-today" onclick="event.stopPropagation(); moveToToday('${docSnap.id}')">
 			            <span class="action-icon">↩️</span>
 			            <span class="action-caption">今日</span>
@@ -1305,7 +1337,7 @@ window.loadTasks = async function () {
                                 >
                                     ${completedMark}
                                 </span>
-                                ${importanceEmoji}${motivationEmoji} ${task.title}${tomorrowBadge}
+                                ${importanceEmoji}${motivationEmoji} ${safeTitle}${tomorrowBadge}
                             </span>
                         </span>
 
