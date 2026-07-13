@@ -1414,27 +1414,42 @@ window.loadTasks = async function () {
 
 window.toggleComplete = async function (taskId, completed) {
 
-	if (!currentUser) {
-	  alert("ログインしてください");
-	  return;
-	}
+    if (!currentUser) {
+        alert("ログインしてください");
+        return;
+    }
+
+    const nextCompleted = !completed;
+    const todayKey = getDateKey(new Date());
 
     try {
+        const updateData = {
+            completed: nextCompleted,
+            completedAt: nextCompleted ? serverTimestamp() : null,
+            updatedAt: serverTimestamp()
+        };
+
+        // 完了にした日は、その日いっぱい表示させる
+        if (nextCompleted) {
+            updateData.taskDate = todayKey;
+            updateData.hidden = false;
+        }
+
         await updateDoc(
             doc(db, "tasks", taskId),
-            {
-                completed: !completed,
-                completedAt: !completed ? serverTimestamp() : null,
-                updatedAt: serverTimestamp()
-            }
+            updateData
         );
 
-        loadTasks();
+        await loadTasks();
 
     } catch (error) {
-        console.error(error);
-        document.getElementById("status").innerHTML =
-            "❌ 更新エラー<br>" + error.message;
+        console.error("完了状態更新エラー:", error);
+
+        const status = document.getElementById("status");
+        if (status) {
+            status.innerHTML =
+                "❌ 更新エラー<br>" + error.message;
+        }
     }
 };
 
