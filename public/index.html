@@ -914,6 +914,21 @@ async function dayRollover() {
             return;
         }
 
+        // 前日以前に完了した today タスクを非表示
+        if (
+             ["today", "tomorrow", "someday"].includes(task.bucket) &&
+            task.completed === true &&
+            task.taskDate < todayKey
+        ) {
+            updates.push(
+                updateDoc(doc(db, "tasks", docSnap.id), {
+                    hidden: true,
+                    updatedAt: serverTimestamp()
+                })
+            );
+            return;   // ←これが重要！
+        }
+ 
         // tomorrow → today
         if (
             task.bucket === "tomorrow" &&
@@ -928,21 +943,7 @@ async function dayRollover() {
                 })
             );
         }
-
-        // 前日以前に完了した today タスクを非表示
-        if (
-            task.bucket === "today" &&
-            task.completed === true &&
-            task.taskDate < todayKey
-        ) {
-            updates.push(
-                updateDoc(doc(db, "tasks", docSnap.id), {
-                    hidden: true,
-                    updatedAt: serverTimestamp()
-                })
-            );
-        }
-    });
+   });
 
     await Promise.all(updates);
 
