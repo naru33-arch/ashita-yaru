@@ -74,10 +74,10 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-top: 14px;
-    margin-bottom: 4px;
+    margin-top: 10px;
+    margin-bottom: 2px;
     padding-bottom: 4px;
-    border-bottom: 2px solid #c8bca8;
+    border-bottom: 1px solid #ddd6c8;
     font-weight: bold;
 }
 
@@ -127,7 +127,7 @@ h2 {
 }
 
 .login-card p {
-  color: #666;
+  color: #999;
   margin-bottom: 24px;
 }
 
@@ -151,7 +151,10 @@ h2 {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    margin-bottom: 8px;
+
+    margin-top: 0;
+    margin-bottom: 2px;
+
     z-index: 100;
 }
 
@@ -169,18 +172,20 @@ h2 {
 }
 
 .user-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+
     border-radius: 50%;
     display: block;
     object-fit: cover;
+
     border: 2px solid rgba(0, 0, 0, 0.12);
     background: #eee;
 }
 
 .user-menu {
     position: absolute;
-    top: 48px;
+    top: 38px;
     right: 0;
     z-index: 1000;
     min-width: 230px;
@@ -224,6 +229,26 @@ h2 {
     background: #ddd;
 }
 
+.user-menu-delete-completed {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    background: #f3ead7;
+    color: #5b4636;
+}
+
+.user-menu-delete-completed:hover {
+    background: #e8dcc4;
+}
+
+.user-menu-delete-completed:active {
+    transform: scale(0.98);
+}
+
 #appScreen {
   display: none;
 }
@@ -236,6 +261,8 @@ h2 {
 .container {
     max-width: 600px;
     margin: auto;
+    padding-bottom: 120px;
+    position: relative;
 }
 
 .sortable-list {
@@ -303,18 +330,21 @@ h2 {
     right: 0;
 
     height: 100%;
-    width: 190px;
+    width: auto;
 
     display: none;
     align-items: center;
     justify-content: flex-end;
-    gap: 4px;
+    gap: 6px;
 
-    padding-right: 6px;
+    padding: 0 8px;
 
     background: rgba(230, 224, 210, 0.98);
 
     z-index: 5;
+    
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
 .swipe-wrapper.open .swipe-actions {
@@ -347,18 +377,6 @@ h2 {
     z-index: 100;
 }
 
-/* =========================
-.task-card.swiped-left {
-    transform: translateX(-180px);
-}
-
-.task-buttons {
-    display: none;
-    align-items: center;
-    transition: opacity 0.2s;
-}
-========================= */
-
 .task-buttons button {
     font-size: 18px;
     padding: 2px 4px;
@@ -389,15 +407,6 @@ h2 {
 .refresh-btn:active {
     transform: scale(0.95);
 }
-
-/* いったんコメントアウト
-.swipe-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-}
-*/
 
 .action-button {
     min-width: 44px;
@@ -466,7 +475,7 @@ h2 {
     padding: 8px;
     cursor: grab;
     user-select: none;
-    color: #666;
+    color: #999;
     min-width: 30px;
     text-align: center;
 }
@@ -577,7 +586,7 @@ h2 {
         display: flex !important;
         opacity: 1 !important;
     }
-}}
+}
 
 @media (hover: none) and (pointer: coarse) {
     .completed-mark {
@@ -594,17 +603,19 @@ h2 {
     }
 
     .drag-handle {
-        font-size: 30px;
-        padding: 12px;
-        min-width: 40px;
+        font-size: 26px;
+        padding: 5px 8px;
+        min-width: 34px;
     }
 
     .task-text {
         font-size: 18px;
-        line-height: 1.4;
+        line-height: 1.2;
     }
 
     .task-card {
+        padding: 2px 0;
+        gap: 6px;
         touch-action: pan-y;
     }
 
@@ -631,6 +642,15 @@ h2 {
     }
 }
 
+@media (max-width: 768px) {
+    body {
+        padding-top: 10px;
+    }
+
+    .user-area {
+        margin-bottom: 0;
+    }
+}
 </style>
 
 </head>
@@ -655,11 +675,21 @@ h2 {
     <img id="userIcon" class="user-icon" alt="ユーザーアイコン">
   </button>
 
-  <div id="userMenu" class="user-menu">
-    <div id="userName" class="user-menu-name"></div>
-    <div id="userEmail" class="user-menu-email"></div>
-    <button id="logoutButton" class="user-menu-logout">ログアウト</button>
-  </div>
+	<div id="userMenu" class="user-menu">
+	    <div class="user-menu-name" id="userName"></div>
+	    <div class="user-menu-email" id="userEmail"></div>
+
+	    <button
+	        class="user-menu-delete-completed"
+	        onclick="deleteCompletedTasks()"
+	    >
+	        🧹 完了タスクを削除
+	    </button>
+
+	    <button class="user-menu-logout" id="logoutButton" onclick="logout()">
+	        ログアウト
+	    </button>
+	</div>
 </div>
 
 <div id="status" style="display:none;"></div>
@@ -724,7 +754,7 @@ h2 {
 </div>
 
 <script type="module">
-const APP_VERSION = "v1.0.1";
+const APP_VERSION = "v1.0.9";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 let editingTaskId = null;
@@ -1683,6 +1713,10 @@ window.manualReload = async function () {
         "🔄 再読み込み中...";
     await loadTasks();
     document.getElementById("status").innerHTML = "";
+};
+
+window.deleteCompletedTasks = function () {
+    alert("完了タスクの削除機能は準備中です");
 };
 
 </script>
